@@ -3,6 +3,76 @@
  * Keep this package free of runtime dependencies — types only.
  */
 
+// ── Domain types (HomeFinder) ───────────────────────────────────────
+
+export type TransportMode = "walk" | "transit" | "cycle" | "drive";
+
+export type AmenityCategory =
+  | "supermarket"
+  | "transit_stop"
+  | "pharmacy"
+  | "park";
+
+export interface TravelStat {
+  mode: TransportMode;
+  minutes: number;
+}
+
+export interface Destination {
+  id: string;
+  name: string;
+  address?: string;
+  travelStats: TravelStat[];
+}
+
+export interface AmenityGroup {
+  category: AmenityCategory;
+  destinations: Destination[];
+}
+
+export interface Poi {
+  id: string;
+  label: string;
+  address: string;
+}
+
+export interface AttachedPoi {
+  poiId: string;
+  label: string;
+  address: string;
+  travelStats: TravelStat[];
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+}
+
+export interface Search {
+  id: string;
+  nickname?: string;
+  address: string;
+  modes: TransportMode[];
+  amenityCategories: AmenityCategory[];
+  amenityGroups: AmenityGroup[];
+  pois: AttachedPoi[];
+  folderId?: string;
+  createdAt: string;
+}
+
+// ── Generic API envelopes ───────────────────────────────────────────
+
+export interface ApiResponse<T> {
+  data: T;
+}
+
+export interface ApiError {
+  error: string;
+}
+
+// ── Legacy types (used by apps/api — will be removed with the API rewrite) ──
+
+/** @deprecated Use domain types above. Kept only for apps/api compatibility. */
 export interface Address {
   line1: string;
   line2?: string;
@@ -12,25 +82,14 @@ export interface Address {
   country: string;
 }
 
+/** @deprecated Use Search instead. Kept only for apps/api compatibility. */
 export interface Property {
   id: string;
   title: string;
   description: string;
-  /** Price stored in the smallest currency unit to avoid float errors. */
   priceCents: number;
   bedrooms: number;
   bathrooms: number;
   address: Address;
-  /** ISO-8601 timestamp. */
   createdAt: string;
-}
-
-/** Standard envelope for successful list/detail responses. */
-export interface ApiResponse<T> {
-  data: T;
-}
-
-/** Standard envelope for error responses. */
-export interface ApiError {
-  error: string;
 }
