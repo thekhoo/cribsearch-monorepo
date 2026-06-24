@@ -60,6 +60,34 @@ export interface Search {
   createdAt: string;
 }
 
+// ── Async Journey Search ───────────────────────────────────────────
+
+export type RequestStatus =
+  | "Pending"
+  | "Processing"
+  | "Complete"
+  | "PartialFailure"
+  | "Failed";
+
+export interface JourneySearchRequest {
+  address: string;
+  modes: TransportMode[];
+  amenityCategories: AmenityCategory[];
+  pois: { label: string; address: string }[];
+  nickname?: string;
+}
+
+export interface JourneySearchResponse {
+  id: string;
+  status: RequestStatus;
+  search?: Search;
+  error?: string;
+}
+
+export interface JourneySearchMessage extends JourneySearchRequest {
+  journeyRequestId: string;
+}
+
 // ── Generic API envelopes ───────────────────────────────────────────
 
 export interface ApiResponse<T> {
