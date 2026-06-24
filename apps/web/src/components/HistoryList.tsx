@@ -19,7 +19,7 @@ export default function HistoryList({
   onToggleSelect,
   maxCompare,
 }: HistoryListProps) {
-  const { deleteSearch, folders } = useStore();
+  const { deleteSearch, moveSearchToFolder, folders } = useStore();
   const [openSearchId, setOpenSearchId] = useState<string | null>(null);
 
   const openSearch = filteredSearches.find((s) => s.id === openSearchId);
@@ -56,10 +56,6 @@ export default function HistoryList({
       {filteredSearches.map((search) => {
         const isSelected = selectedIds.includes(search.id);
         const canSelect = isSelected || selectedIds.length < maxCompare;
-        const folder = search.folderId
-          ? folders.find((f) => f.id === search.folderId)
-          : undefined;
-
         return (
           <div
             key={search.id}
@@ -94,11 +90,23 @@ export default function HistoryList({
                   ` · ${search.pois.length} POI${search.pois.length !== 1 ? "s" : ""}`}
               </p>
             </button>
-            {folder && (
-              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                {folder.name}
-              </span>
-            )}
+            <select
+              value={search.folderId ?? ""}
+              onChange={(e) =>
+                moveSearchToFolder(
+                  search.id,
+                  e.target.value || undefined,
+                )
+              }
+              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
+            >
+              <option value="">No folder</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => deleteSearch(search.id)}
               className="shrink-0 text-sm text-red-500 hover:text-red-700"

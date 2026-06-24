@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "../../lib/store";
+import FolderSidebar from "../../components/FolderSidebar";
 import HistoryList from "../../components/HistoryList";
 import EmptyState from "../../components/EmptyState";
 
@@ -46,35 +47,20 @@ export default function HistoryPage() {
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button
-          onClick={() => setActiveFolderId(null)}
-          className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
-            activeFolderId === null
-              ? "border-gray-900 bg-gray-900 text-white"
-              : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setActiveFolderId("__uncategorised__")}
-          className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
-            activeFolderId === "__uncategorised__"
-              ? "border-gray-900 bg-gray-900 text-white"
-              : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-          }`}
-        >
-          Uncategorised
-        </button>
+      <div className="flex gap-6">
+        <FolderSidebar
+          activeFolderId={activeFolderId}
+          onSelect={setActiveFolderId}
+        />
+        <div className="min-w-0 flex-1">
+          <HistoryList
+            filteredSearches={filteredSearches}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            maxCompare={MAX_COMPARE}
+          />
+        </div>
       </div>
-
-      <HistoryList
-        filteredSearches={filteredSearches}
-        selectedIds={selectedIds}
-        onToggleSelect={toggleSelect}
-        maxCompare={MAX_COMPARE}
-      />
     </main>
   );
 }
