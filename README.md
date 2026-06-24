@@ -1,0 +1,96 @@
+# HomeFinder Monorepo
+
+A monorepo containing the HomeFinder web frontend and backend API.
+
+| Workspace                  | Stack                                  | Deploys to            |
+| -------------------------- | -------------------------------------- | --------------------- |
+| `apps/web`                 | Next.js 15 (App Router) + Tailwind v4  | Vercel                |
+| `apps/api`                 | Express on Lambda (`serverless-http`)  | AWS (Lambda + API GW) |
+| `packages/shared-types`    | TypeScript types shared web ↔ api      | —                     |
+
+- **Package manager / orchestration:** pnpm workspaces + [Turborepo](https://turbo.build)
+- **Data layer:** Supabase (Postgres) via `@supabase/supabase-js`
+- **Infra-as-code:** AWS SAM (`apps/api/template.yaml`)
+
+## Structure
+
+```
+homefinder-monorepo/
+├── apps/
+│   ├── web/                  # Next.js + Tailwind → Vercel
+│   └── api/                  # Express → Lambda (AWS SAM)
+│       └── src/
+│           ├── routes/       # HTTP routes
+│           ├── services/     # business logic
+│           ├── db/           # Supabase access
+│           ├── config/       # env access
+│           ├── app.ts        # Express app (shared by server + handler)
+│           ├── server.ts     # local dev entry
+│           └── handler.ts    # Lambda entry (serverless-http)
+├── packages/
+│   └── shared-types/         # request/response contracts
+├── turbo.json                # task pipeline + caching
+├── tsconfig.base.json        # shared TS config
+└── pnpm-workspace.yaml
+```
+
+## Prerequisites
+
+- Node 20 (`nvm use` reads `.nvmrc`)
+- pnpm 10 (`corepack enable`)
+- For deploying the API: [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) + Docker
+
+## Getting started
+
+```bash
+pnpm install
+cp .env.example .env          # fill in Supabase credentials
+pnpm dev                      # runs web + api together (Turborepo)
+```
+
+- Web: http://localhost:3000
+- API: http://localhost:3001 (e.g. `GET /health`, `GET /properties`)
+
+The web app renders sample data until the API + Supabase `properties` table are wired up.
+
+## Common commands
+
+| Command          | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `pnpm dev`       | Run all apps in watch mode                   |
+| `pnpm build`     | Build all workspaces                         |
+| `pnpm typecheck` | Type-check all workspaces                    |
+| `pnpm lint`      | Lint all workspaces                          |
+| `pnpm test`      | Run all tests                                |
+| `pnpm format`    | Prettier write across the repo               |
+
+## Deployment
+
+### Web → Vercel
+
+Create a Vercel project pointing at this repo with:
+
+- **Root Directory:** `apps/web`
+- **Install Command:** `pnpm install` (run at repo root)
+- Set `NEXT_PUBLIC_API_URL` to the deployed API base URL.
+
+Vercel detects the Turborepo setup automatically.
+
+### API → AWS (SAM)
+
+```bash
+cd apps/api
+pnpm sam:build                # esbuild bundles TypeScript
+sam deploy --guided \
+  --parameter-overrides \
+    SupabaseUrl=$SUPABASE_URL \
+    SupabaseServiceRoleKey=$SUPABASE_SERVICE_ROLE_KEY
+```
+
+Run the API locally against the Lambda packaging with `pnpm sam:local` (requires Docker).
+
+## Conventions
+
+- TypeScript everywhere, `strict` mode (see `tsconfig.base.json`).
+- Shared contracts live in `packages/shared-types` — import them in both apps rather than redefining shapes.
+- The Express app is defined once in `apps/api/src/app.ts` and reused by both the local server and the Lambda handler.

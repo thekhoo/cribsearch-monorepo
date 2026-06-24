@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnp.*
+
+# builds
+dist/
+.next/
+out/
+build/
+
+# turbo
+.turbo/
+
+# aws sam
+.aws-sam/
+samconfig.toml
+
+# env
+.env
+.env.*
+!.env.example
+
+# test / coverage
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.tsbuildinfo
+next-env.d.ts
