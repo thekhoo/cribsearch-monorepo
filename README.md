@@ -12,6 +12,10 @@ A monorepo containing the HomeFinder web frontend and backend API.
 - **Data layer:** Supabase (Postgres) via `@supabase/supabase-js`
 - **Infra-as-code:** AWS SAM (`apps/api/template.yaml`)
 
+> Architecture decisions are recorded in [`docs/adr/`](docs/adr/). See
+> [ADR 0001](docs/adr/0001-backend-hosting.md) for why the API runs on AWS Lambda
+> with Supabase used as the database only.
+
 ## Structure
 
 ```
