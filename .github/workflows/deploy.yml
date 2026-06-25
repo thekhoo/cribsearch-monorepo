@@ -107,12 +107,12 @@ jobs:
         with:
           environment: production
           template-file: apps/api/template.yaml
-          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-homefinder-monorepo-deployment
+          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
 
       - uses: thekhoo/github-actions-shared/.github/actions/sam-deploy@main
         with:
           environment: production
           packaged-template-uri: ${{ steps.package.outputs.packaged-template-uri }}
-          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-homefinder-monorepo-deployment
-          stack-name: production-homefinder
+          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+          stack-name: production-cribsearch
           parameter-overrides: Environment=production

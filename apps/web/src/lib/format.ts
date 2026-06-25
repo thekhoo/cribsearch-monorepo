@@ -1,4 +1,4 @@
-import type { AmenityCategory, TransportMode } from "@homefinder/shared-types";
+import type { AmenityCategory, TransportMode } from "@cribsearch/shared-types";
 
 export const MODE_META: Record<TransportMode, { label: string; icon: string }> = {
   walk: { label: "Walk", icon: "🚶" },

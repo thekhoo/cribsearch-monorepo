@@ -3,8 +3,8 @@ import type {
   SQSBatchResponse,
   SQSHandler,
 } from "aws-lambda";
-import type { JourneySearchMessage } from "@homefinder/shared-types";
-import { logger, serializeError } from "@homefinder/logger";
+import type { JourneySearchMessage } from "@cribsearch/shared-types";
+import { logger, serializeError } from "@cribsearch/logger";
 import { ports } from "./composition";
 import { initSupabase } from "./db/supabase";
 import { processJourneyRequest } from "./services/process-journey-request";

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryJourneyRepository } from "../adapters/in-memory-journey-repository";
-import type { JourneySearchRequest, Search } from "@homefinder/shared-types";
+import type { JourneySearchRequest, Search } from "@cribsearch/shared-types";
 
 const sampleRequest: JourneySearchRequest = {
   address: "123 Main St, Sydney",

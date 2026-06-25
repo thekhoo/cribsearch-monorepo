@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Folder, Poi, Search } from "@homefinder/shared-types";
+import type { Folder, Poi, Search } from "@cribsearch/shared-types";
 import { SEED_FOLDERS, SEED_POIS, SEED_SEARCHES } from "./fixtures";
 
 interface StoreActions {

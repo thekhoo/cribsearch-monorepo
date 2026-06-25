@@ -1,4 +1,4 @@
-import type { Folder, Poi, Search } from "@homefinder/shared-types";
+import type { Folder, Poi, Search } from "@cribsearch/shared-types";
 
 export const SEED_POIS: Poi[] = [
   { id: "poi-1", label: "Work", address: "100 George St, Sydney NSW 2000" },

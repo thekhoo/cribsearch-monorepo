@@ -5,7 +5,7 @@ import type {
   Poi,
   TransportMode,
   TravelStat,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 
 const NAMES: Record<AmenityCategory, string[]> = {
   supermarket: ["Coles", "Woolworths", "Aldi"],

@@ -2,7 +2,7 @@ import type {
   JourneySearchRequest,
   RequestStatus,
   Search,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 
 export interface StoredJourneyRequest {
   id: string;

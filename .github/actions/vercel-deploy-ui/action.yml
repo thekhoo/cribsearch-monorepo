@@ -16,7 +16,7 @@ inputs:
     required: false
     default: 'false'
   alias:
-    description: Stable alias to assign after a preview deploy (e.g. homefinder-dev.vercel.app)
+    description: Stable alias to assign after a preview deploy (e.g. cribsearch-dev.vercel.app)
     required: false
     default: ''
 

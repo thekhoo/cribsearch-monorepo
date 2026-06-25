@@ -1,11 +1,11 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-import { logger } from "@homefinder/logger";
+import { logger } from "@cribsearch/logger";
 
 const log = logger.child({ component: "ssm" });
 
-const SSM_SUPABASE_URL = "/production/homefinder/service/supabase/url";
+const SSM_SUPABASE_URL = "/production/cribsearch/service/supabase/url";
 const SSM_SUPABASE_SERVICE_ROLE_KEY =
-  "/production/homefinder/service/supabase/service-role-key";
+  "/production/cribsearch/service/supabase/service-role-key";
 
 export interface SupabaseConfig {
   supabaseUrl: string;

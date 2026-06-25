@@ -1,6 +1,6 @@
 "use client";
 
-import type { TransportMode } from "@homefinder/shared-types";
+import type { TransportMode } from "@cribsearch/shared-types";
 import { MODE_META } from "../lib/format";
 
 const ALL_MODES: TransportMode[] = ["walk", "transit", "cycle", "drive"];

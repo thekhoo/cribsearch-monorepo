@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { ApiResponse, Property } from "@homefinder/shared-types";
+import type { ApiResponse, Property } from "@cribsearch/shared-types";
 import { listProperties } from "../services/property-service";
 
 export const propertiesRouter: Router = Router();

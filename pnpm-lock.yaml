@@ -26,10 +26,10 @@ importers:
       '@aws-sdk/client-ssm':
         specifier: ^3.1075.0
         version: 3.1075.0
-      '@homefinder/logger':
+      '@cribsearch/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      '@homefinder/shared-types':
+      '@cribsearch/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       '@supabase/supabase-js':
@@ -72,7 +72,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@homefinder/shared-types':
+      '@cribsearch/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       next:

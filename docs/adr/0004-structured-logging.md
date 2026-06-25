@@ -1,4 +1,4 @@
-# 4. Structured logging via @homefinder/logger (Winston)
+# 4. Structured logging via @cribsearch/logger (Winston)
 
 - Status: Accepted
 - Date: 2026-06-25
@@ -13,7 +13,7 @@ requires structured (JSON) log lines to be useful.
 
 ## Decision
 
-Introduce a shared workspace package `@homefinder/logger` that wraps Winston
+Introduce a shared workspace package `@cribsearch/logger` that wraps Winston
 and is consumed by `apps/api`. The logger:
 
 - Emits **single-line JSON to stdout** via `winston.format.json()` in all

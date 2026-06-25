@@ -23,7 +23,7 @@ those concepts; this plan only says how to build them.
 ## Architecture (what you are building)
 
 ```
-POST /homefinder/v1/journey
+POST /cribsearch/v1/journey
   └─ validate → repo.create(Pending) → queue.enqueue({journeyRequestId, ...payload})
        └─ 202 JourneySearchResponse{status:"Pending"}
 
@@ -31,7 +31,7 @@ POST /homefinder/v1/journey
   repo.markProcessing → maps.findAmenities / maps.computeTravelStats
     → repo.saveResult(Complete | PartialFailure | Failed)
 
-GET /homefinder/v1/journey/{id}  ──> repo.getById ──> JourneySearchResponse
+GET /cribsearch/v1/journey/{id}  ──> repo.getById ──> JourneySearchResponse
 ```
 
 Three injected **ports**, with environment-specific implementations:
@@ -64,10 +64,10 @@ src/
     validate-journey-request.ts     # minimum-to-submit validation
   composition.ts                    # wires ports per environment (singleton)
   routes/
-    journey.ts                      # POST + GET, mounted at /homefinder/v1/journey
-    health.ts                       # (re-mounted at /homefinder/v1/health)
+    journey.ts                      # POST + GET, mounted at /cribsearch/v1/journey
+    health.ts                       # (re-mounted at /cribsearch/v1/health)
   worker.ts                         # SQS event adapter → process-journey-request
-  app.ts                            # mount routers under /homefinder/v1
+  app.ts                            # mount routers under /cribsearch/v1
   __tests__/
     validate-journey-request.test.ts
     process-journey-request.test.ts
@@ -107,7 +107,7 @@ export interface JourneySearchMessage extends JourneySearchRequest {
 
 Each step = one commit. Write tests first where a test is named.
 
-1. **shared-types contracts.** Add the types above. `pnpm --filter @homefinder/shared-types build`.
+1. **shared-types contracts.** Add the types above. `pnpm --filter @cribsearch/shared-types build`.
 
 2. **Ports.** Define the three interfaces in `src/ports/`:
    - `JourneyRequestRepository`: `create(req): Promise<{id, status:"Pending"}>`,
@@ -167,7 +167,7 @@ Each step = one commit. Write tests first where a test is named.
    `JourneySearchResponse`, or `404` `ApiError` if unknown.
 
 10. **Mounting** (`app.ts`): mount `journeyRouter` at
-    `/homefinder/v1/journey` and `healthRouter` at `/homefinder/v1/health`.
+    `/cribsearch/v1/journey` and `healthRouter` at `/cribsearch/v1/health`.
     Remove the legacy `/properties` mount **only if** you also delete its route +
     service (otherwise leave it; it is out of scope — see open issue).
 
@@ -198,7 +198,7 @@ Each step = one commit. Write tests first where a test is named.
 
 14. **Config** (`config/env.ts`): add `journeyQueueUrl: process.env.JOURNEY_QUEUE_URL ?? ""`.
 
-15. **Docs.** Update `README.md`: new endpoints under `/homefinder/v1/...`, the
+15. **Docs.** Update `README.md`: new endpoints under `/cribsearch/v1/...`, the
     second (worker) Lambda + queue in the structure/deploy sections, and a note
     that the deployed GET round-trip is pending the real DB (link ADR 0003).
 

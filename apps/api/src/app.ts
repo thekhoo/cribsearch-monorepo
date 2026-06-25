@@ -5,8 +5,8 @@ import express, {
   type Response,
 } from "express";
 import { randomUUID } from "node:crypto";
-import { logger, serializeError, type Logger } from "@homefinder/logger";
-import type { ApiError } from "@homefinder/shared-types";
+import { logger, serializeError, type Logger } from "@cribsearch/logger";
+import type { ApiError } from "@cribsearch/shared-types";
 import { healthRouter } from "./routes/health";
 import { propertiesRouter } from "./routes/properties";
 import { createJourneyRouter } from "./routes/journey";
@@ -34,9 +34,9 @@ export const createApp = (ports?: Ports): Express => {
   app.use("/properties", propertiesRouter);
 
   // v1 routes
-  app.use("/homefinder/v1/health", healthRouter);
+  app.use("/cribsearch/v1/health", healthRouter);
   if (ports) {
-    app.use("/homefinder/v1/journey", createJourneyRouter(ports));
+    app.use("/cribsearch/v1/journey", createJourneyRouter(ports));
   }
 
   // 404 fallback

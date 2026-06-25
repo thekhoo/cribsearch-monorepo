@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateJourneyRequest } from "../services/validate-journey-request";
-import type { JourneySearchRequest } from "@homefinder/shared-types";
+import type { JourneySearchRequest } from "@cribsearch/shared-types";
 
 const valid: JourneySearchRequest = {
   address: "123 Main St, Sydney",

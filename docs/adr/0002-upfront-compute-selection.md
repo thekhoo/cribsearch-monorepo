@@ -5,8 +5,8 @@
 
 ## Context
 
-The initial scaffolding modelled HomeFinder as a **listings browser** (a
-`Property` type with title, price, bedrooms). That is not the product. HomeFinder
+The initial scaffolding modelled Cribsearch as a **listings browser** (a
+`Property` type with title, price, bedrooms). That is not the product. Cribsearch
 is a single-user tool for evaluating the **livability of a candidate rental
 address**: the user enters an address they are considering, and the app reports
 travel times from it to nearby amenities and to the user's own points of
@@ -20,7 +20,7 @@ cares about, say, cycling to two places.
 
 ## Decision
 
-1. **Domain pivot.** HomeFinder evaluates an address by its surroundings, not a
+1. **Domain pivot.** Cribsearch evaluates an address by its surroundings, not a
    catalogue of listings. The placeholder `Property` listing type is removed and
    replaced by the real domain types (`Search`, `Amenity`, `Poi`, `Folder`,
    `TravelStat`, `TransportMode`, `AmenityCategory`) in

@@ -5,7 +5,7 @@ import type {
   AmenityCategory,
   Search,
   TransportMode,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 import { runSearch } from "../lib/mockSearch";
 import ModeSelector from "./ModeSelector";

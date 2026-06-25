@@ -1,6 +1,6 @@
-# HomeFinder Monorepo
+# Cribsearch Monorepo
 
-A monorepo containing the HomeFinder web frontend and backend API.
+A monorepo containing the Cribsearch web frontend and backend API.
 
 | Workspace                  | Stack                                  | Deploys to            |
 | -------------------------- | -------------------------------------- | --------------------- |
@@ -20,7 +20,7 @@ A monorepo containing the HomeFinder web frontend and backend API.
 ## Structure
 
 ```
-homefinder-monorepo/
+cribsearch-monorepo/
 ├── apps/
 │   ├── web/                  # Next.js + Tailwind → Vercel
 │   └── api/                  # Express → Lambda (AWS SAM)
@@ -37,7 +37,7 @@ homefinder-monorepo/
 │           ├── handler.ts    # API Lambda entry (serverless-http)
 │           └── worker.ts     # Worker Lambda entry (SQS consumer)
 ├── packages/
-│   ├── logger/               # shared Winston logger (@homefinder/logger)
+│   ├── logger/               # shared Winston logger (@cribsearch/logger)
 │   └── shared-types/         # request/response contracts
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
@@ -65,9 +65,9 @@ pnpm dev                      # runs web + api together (Turborepo)
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| `GET` | `/homefinder/v1/health` | Health check |
-| `POST` | `/homefinder/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
-| `GET` | `/homefinder/v1/journey/:id` | Poll for Journey Search Response |
+| `GET` | `/cribsearch/v1/health` | Health check |
+| `POST` | `/cribsearch/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
+| `GET` | `/cribsearch/v1/journey/:id` | Poll for Journey Search Response |
 
 > **Note:** The deployed `GET /journey/:id` round-trip does not yet reflect worker
 > updates because the repository is an in-memory dummy (each Lambda has its own
@@ -100,9 +100,9 @@ the app that changed:
   composite action (production deploy).
 - **`deploy-api`** → AWS, via the shared `sam-build-and-package` + `sam-deploy`
   actions in `thekhoo/github-actions-shared`. AWS access is keyless (GitHub OIDC →
-  `github-actions-oidc-entry-role` → `github-actions-thekhoo-homefinder-monorepo-deployment`).
+  `github-actions-oidc-entry-role` → `github-actions-thekhoo-cribsearch-monorepo-deployment`).
   Artefacts are packaged to `s3://aws-management-codepipeline/production/sam/<sha>/`
-  and deployed as the CloudFormation stack `production-homefinder`.
+  and deployed as the CloudFormation stack `production-cribsearch`.
 
 `ci.yml` runs the same verification on pull requests / merge queue only. See
 [ADR 0006](docs/adr/0006-cicd-github-actions.md) for the rationale.
@@ -127,9 +127,9 @@ These prerequisites live outside the repo and must exist before the pipeline wor
    values, replace with real credentials):
 
    ```bash
-   aws ssm put-parameter --name /production/homefinder/service/supabase/url \
+   aws ssm put-parameter --name /production/cribsearch/service/supabase/url \
      --type String --value "$SUPABASE_URL" --overwrite
-   aws ssm put-parameter --name /production/homefinder/service/supabase/service-role-key \
+   aws ssm put-parameter --name /production/cribsearch/service/supabase/service-role-key \
      --type SecureString --value "$SUPABASE_SERVICE_ROLE_KEY" --overwrite
    ```
 
@@ -151,7 +151,7 @@ Run the API locally against the Lambda packaging with `pnpm sam:local` (requires
 
 ## Logging
 
-The API uses `@homefinder/logger` (Winston). In production (and by default),
+The API uses `@cribsearch/logger` (Winston). In production (and by default),
 logs are single-line JSON to stdout for CloudWatch Logs Insights. In
 `NODE_ENV=development`, output is colorized and human-readable. The level is
 controlled by `LOG_LEVEL` (default `info`). Under `NODE_ENV=test` the console

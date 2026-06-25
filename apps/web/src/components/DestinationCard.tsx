@@ -1,4 +1,4 @@
-import type { TravelStat } from "@homefinder/shared-types";
+import type { TravelStat } from "@cribsearch/shared-types";
 import { MODE_META, formatMinutes } from "../lib/format";
 
 interface DestinationCardProps {

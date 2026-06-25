@@ -1,4 +1,4 @@
-import type { JourneySearchRequest, Search } from "@homefinder/shared-types";
+import type { JourneySearchRequest, Search } from "@cribsearch/shared-types";
 import type {
   JourneyRequestRepository,
   StoredJourneyRequest,

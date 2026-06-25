@@ -1,6 +1,6 @@
-# HomeFinder — Context & Glossary
+# Cribsearch — Context & Glossary
 
-This file is the shared language for the HomeFinder project. It is a glossary of
+This file is the shared language for the Cribsearch project. It is a glossary of
 domain terms only — no implementation details. Keep it in sync as the language
 evolves.
 
@@ -20,7 +20,7 @@ A Search captures:
 - the point in time it was performed.
 
 > Note: this supersedes the placeholder `Property` type (a real-estate listing
-> with price/bedrooms), which does not reflect the product. HomeFinder is not a
+> with price/bedrooms), which does not reflect the product. Cribsearch is not a
 > listings browser; it evaluates the livability of an address the user is
 > considering.
 

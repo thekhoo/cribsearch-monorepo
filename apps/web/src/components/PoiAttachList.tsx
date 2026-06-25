@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Poi } from "@homefinder/shared-types";
+import type { Poi } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 
 interface PoiAttachListProps {

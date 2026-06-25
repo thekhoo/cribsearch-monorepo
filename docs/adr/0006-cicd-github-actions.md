@@ -20,14 +20,14 @@ Deploy from GitHub Actions on push to `main`:
 - **API → AWS** via the shared `sam-build-and-package` and `sam-deploy` actions.
   AWS access uses **OIDC role-chaining**: the GitHub OIDC token assumes
   `github-actions-oidc-entry-role`, which chains into a per-repo deployment role
-  `github-actions-thekhoo-homefinder-monorepo-deployment` (scoped to
-  `production-homefinder-*` resources). No long-lived AWS keys are stored in
+  `github-actions-thekhoo-cribsearch-monorepo-deployment` (scoped to
+  `production-cribsearch-*` resources). No long-lived AWS keys are stored in
   GitHub.
 - **Artefacts** are packaged to the shared `aws-management-codepipeline` bucket
   under `production/sam/<sha>/`.
 - The SAM template is **parameterised by `Environment`** (`development` |
   `staging` | `production`); only `production` is wired today (stack
-  `production-homefinder`). `NODE_ENV` stays `production` regardless — it is a
+  `production-cribsearch`). `NODE_ENV` stays `production` regardless — it is a
   Node runtime flag, orthogonal to the deploy stage.
 - `ci.yml` runs verification on **PRs / merge queue only**; `deploy.yml` runs
   its own `verify` job on `main` and gates `deploy-ui` / `deploy-api` behind it,
@@ -36,7 +36,7 @@ Deploy from GitHub Actions on push to `main`:
 ## Consequences
 
 - Deploys require AWS prerequisites that live outside this repo: the deployment
-  role, the SSM Supabase params (`/production/homefinder/service/supabase/*`),
+  role, the SSM Supabase params (`/production/cribsearch/service/supabase/*`),
   and the GitHub `production` environment secrets (`VERCEL_*`). These are
   documented in the README.
 - Reusing the org's shared actions and artefact bucket couples this repo's

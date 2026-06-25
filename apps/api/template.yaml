@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: HomeFinder API — Express on Lambda behind API Gateway (HTTP API).
+Description: Cribsearch API — Express on Lambda behind API Gateway (HTTP API).
 
 Parameters:
   Environment:
@@ -53,7 +53,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/homefinder/service/supabase/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
@@ -88,7 +88,7 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/homefinder/service/supabase/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:

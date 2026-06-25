@@ -15,8 +15,8 @@ console, and `sam deploy` command lines.
 Fetch Supabase credentials at runtime from **AWS Systems Manager (SSM) Parameter
 Store** instead of passing them as stack parameters or environment variables.
 
-- **SSM paths:** `/production/homefinder/service/supabase/url` (String) and
-  `/production/homefinder/service/supabase/service-role-key` (SecureString,
+- **SSM paths:** `/production/cribsearch/service/supabase/url` (String) and
+  `/production/cribsearch/service/supabase/service-role-key` (SecureString,
   encrypted with the default `aws/ssm` KMS key).
 - **Cold-start init:** each Lambda entry point (`handler.ts`, `worker.ts`) calls
   `initSupabase()` during init (outside the handler). The SSM fetch happens once
