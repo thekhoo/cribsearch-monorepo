@@ -1,4 +1,4 @@
-import { logger } from "@homefinder/logger";
+import { logger } from "@cribsearch/logger";
 import { createApp } from "./app";
 import { env } from "./config/env";
 import { initSupabase } from "./db/supabase";

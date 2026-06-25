@@ -1,10 +1,10 @@
 {
-  "name": "homefinder-monorepo",
+  "name": "cribsearch-monorepo",
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "turbo run dev",

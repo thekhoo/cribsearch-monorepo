@@ -1,6 +1,6 @@
-# HomeFinder Web UI — Implementation Plan
+# Cribsearch Web UI — Implementation Plan
 
-Scope: build the **front-end UI only** for HomeFinder in `apps/web`. No backend,
+Scope: build the **front-end UI only** for Cribsearch in `apps/web`. No backend,
 no real Google Maps calls, no CI/CD. Travel-stat results are **faked** but every
 interaction works in-session (state resets on page refresh — this is expected).
 
@@ -192,7 +192,7 @@ lib/
 ## 6. Conventions / constraints
 
 - TypeScript strict; functional components; prefer pure helpers in `lib/`.
-- Import domain types from `@homefinder/shared-types` (never redefine shapes).
+- Import domain types from `@cribsearch/shared-types` (never redefine shapes).
 - Client components (`"use client"`) where state/interactivity is needed; the
   store is client-side.
 - Keep `CONTEXT.md` terminology in UI copy (Search, Amenity, POI, Folder).

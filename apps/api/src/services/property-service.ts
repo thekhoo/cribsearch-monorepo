@@ -1,4 +1,4 @@
-import type { Property } from "@homefinder/shared-types";
+import type { Property } from "@cribsearch/shared-types";
 import { getSupabase } from "../db/supabase";
 
 const TABLE = "properties";

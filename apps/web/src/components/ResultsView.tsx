@@ -1,4 +1,4 @@
-import type { Search } from "@homefinder/shared-types";
+import type { Search } from "@cribsearch/shared-types";
 import { CATEGORY_META } from "../lib/format";
 import DestinationCard from "./DestinationCard";
 

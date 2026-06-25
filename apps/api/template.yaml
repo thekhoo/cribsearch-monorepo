@@ -1,10 +1,20 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: HomeFinder API — Express on Lambda behind API Gateway (HTTP API).
+Description: Cribsearch API — Express on Lambda behind API Gateway (HTTP API).
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment stage (drives SSM parameter paths).
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Default: production
 
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Architectures:
       - arm64
     Timeout: 30
@@ -43,7 +53,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: production/homefinder/service/supabase/*
+            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
@@ -78,7 +88,7 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: production/homefinder/service/supabase/*
+            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:

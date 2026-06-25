@@ -1,6 +1,6 @@
 "use client";
 
-import type { Search } from "@homefinder/shared-types";
+import type { Search } from "@cribsearch/shared-types";
 import ResultsView from "./ResultsView";
 
 interface CompareViewProps {

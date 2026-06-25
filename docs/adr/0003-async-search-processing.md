@@ -20,13 +20,13 @@ failing, costly work without blocking the caller.
 
 Accept Search submissions **asynchronously** and process them in the background.
 
-1. **Two functions, one queue.** `POST /homefinder/v1/journey` (the existing
+1. **Two functions, one queue.** `POST /cribsearch/v1/journey` (the existing
    Express/API Lambda) validates a **Journey Search Request**, persists it as
    `Pending`, enqueues it on an SQS queue, and returns **202 Accepted** with a
    **Journey Search Response** in `Pending`. A **separate worker Lambda**
    consumes the queue, flips the request to `Processing`, performs the maps work,
    and writes a terminal state. The caller polls
-   `GET /homefinder/v1/journey/{id}`.
+   `GET /cribsearch/v1/journey/{id}`.
 
 2. **Request Status lifecycle.** `Pending → Processing →
    Complete | PartialFailure | Failed` (see `CONTEXT.md`). `PartialFailure`

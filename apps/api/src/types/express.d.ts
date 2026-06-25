@@ -1,4 +1,4 @@
-import type { Logger } from "@homefinder/logger";
+import type { Logger } from "@cribsearch/logger";
 
 declare global {
   namespace Express {

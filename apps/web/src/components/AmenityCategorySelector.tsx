@@ -1,6 +1,6 @@
 "use client";
 
-import type { AmenityCategory } from "@homefinder/shared-types";
+import type { AmenityCategory } from "@cribsearch/shared-types";
 import { CATEGORY_META } from "../lib/format";
 
 const ALL_CATEGORIES: AmenityCategory[] = [

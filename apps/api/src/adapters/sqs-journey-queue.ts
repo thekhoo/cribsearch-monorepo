@@ -1,6 +1,6 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import type { JourneySearchMessage } from "@homefinder/shared-types";
-import { logger } from "@homefinder/logger";
+import type { JourneySearchMessage } from "@cribsearch/shared-types";
+import { logger } from "@cribsearch/logger";
 import type { JourneyQueue } from "../ports/journey-queue";
 
 const log = logger.child({ component: "sqs-queue" });

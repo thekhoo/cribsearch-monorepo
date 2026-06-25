@@ -1,4 +1,4 @@
-import type { JourneySearchRequest } from "@homefinder/shared-types";
+import type { JourneySearchRequest } from "@cribsearch/shared-types";
 
 export type ValidationResult =
   | { ok: true }

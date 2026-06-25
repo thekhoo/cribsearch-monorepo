@@ -8,7 +8,7 @@ import type { Ports } from "../composition";
 import type {
   JourneySearchRequest,
   JourneySearchResponse,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 
 const validRequest: JourneySearchRequest = {
   address: "123 Main St, Sydney",
@@ -32,7 +32,7 @@ describe("journey routes integration", () => {
 
   it("POST → 202 Pending, then GET → Complete with search", async () => {
     const postRes = await request(app())
-      .post("/homefinder/v1/journey")
+      .post("/cribsearch/v1/journey")
       .send(validRequest)
       .expect(202);
 
@@ -41,7 +41,7 @@ describe("journey routes integration", () => {
     expect(postBody.id).toBeDefined();
 
     const getRes = await request(app())
-      .get(`/homefinder/v1/journey/${postBody.id}`)
+      .get(`/cribsearch/v1/journey/${postBody.id}`)
       .expect(200);
 
     const getBody = getRes.body as JourneySearchResponse;
@@ -56,14 +56,14 @@ describe("journey routes integration", () => {
     maps.addFailingAddress("456 Office St");
 
     const postRes = await request(app())
-      .post("/homefinder/v1/journey")
+      .post("/cribsearch/v1/journey")
       .send(validRequest)
       .expect(202);
 
     const postBody = postRes.body as JourneySearchResponse;
 
     const getRes = await request(app())
-      .get(`/homefinder/v1/journey/${postBody.id}`)
+      .get(`/cribsearch/v1/journey/${postBody.id}`)
       .expect(200);
 
     const getBody = getRes.body as JourneySearchResponse;
@@ -76,14 +76,14 @@ describe("journey routes integration", () => {
     maps.forceAmenityFailure("permanent");
 
     const postRes = await request(app())
-      .post("/homefinder/v1/journey")
+      .post("/cribsearch/v1/journey")
       .send(validRequest)
       .expect(202);
 
     const postBody = postRes.body as JourneySearchResponse;
 
     const getRes = await request(app())
-      .get(`/homefinder/v1/journey/${postBody.id}`)
+      .get(`/cribsearch/v1/journey/${postBody.id}`)
       .expect(200);
 
     const getBody = getRes.body as JourneySearchResponse;
@@ -93,7 +93,7 @@ describe("journey routes integration", () => {
 
   it("POST with invalid body → 400 with error", async () => {
     const res = await request(app())
-      .post("/homefinder/v1/journey")
+      .post("/cribsearch/v1/journey")
       .send({ address: "", modes: [], amenityCategories: [], pois: [] })
       .expect(400);
 
@@ -102,7 +102,7 @@ describe("journey routes integration", () => {
 
   it("GET unknown id → 404", async () => {
     await request(app())
-      .get("/homefinder/v1/journey/nonexistent")
+      .get("/cribsearch/v1/journey/nonexistent")
       .expect(404);
   });
 });

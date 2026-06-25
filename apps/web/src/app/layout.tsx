@@ -4,7 +4,7 @@ import { StoreProvider } from "../lib/store";
 import Nav from "../components/Nav";
 
 export const metadata: Metadata = {
-  title: "HomeFinder",
+  title: "Cribsearch",
   description: "Evaluate a candidate rental address by its surroundings.",
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Search } from "@homefinder/shared-types";
+import type { Search } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 import ResultsView from "./ResultsView";
 import EmptyState from "./EmptyState";

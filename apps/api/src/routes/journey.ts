@@ -3,7 +3,7 @@ import type {
   ApiError,
   JourneySearchRequest,
   JourneySearchResponse,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 import { validateJourneyRequest } from "../services/validate-journey-request";
 import type { Ports } from "../composition";
 

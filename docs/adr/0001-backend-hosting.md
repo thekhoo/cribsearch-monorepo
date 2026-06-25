@@ -5,7 +5,7 @@
 
 ## Context
 
-The HomeFinder backend needs an HTTP API and a Postgres database. Two viable
+The Cribsearch backend needs an HTTP API and a Postgres database. Two viable
 paths were considered:
 
 - **Path A — Custom API on AWS:** an Express app deployed to AWS Lambda behind

@@ -1,5 +1,5 @@
-import type { JourneySearchMessage } from "@homefinder/shared-types";
-import { logger } from "@homefinder/logger";
+import type { JourneySearchMessage } from "@cribsearch/shared-types";
+import { logger } from "@cribsearch/logger";
 import type { JourneyQueue } from "../ports/journey-queue";
 import type { JourneyRequestRepository } from "../ports/journey-request-repository";
 import type { MapsProvider } from "../ports/maps-provider";

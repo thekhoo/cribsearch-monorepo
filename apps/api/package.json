@@ -1,5 +1,5 @@
 {
-  "name": "@homefinder/api",
+  "name": "@cribsearch/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,8 +15,8 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.1075.0",
     "@aws-sdk/client-sqs": "^3.1075.0",
-    "@homefinder/logger": "workspace:*",
-    "@homefinder/shared-types": "workspace:*",
+    "@cribsearch/logger": "workspace:*",
+    "@cribsearch/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
     "express": "^4.21.2",
     "serverless-http": "^3.2.0"
@@ -24,8 +24,9 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",
     "@types/express": "^4.17.21",
-    "@types/node": "^22.10.2",
+    "@types/node": "^24",
     "@types/supertest": "^7.2.0",
+    "esbuild": "^0.28.0",
     "supertest": "^7.2.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

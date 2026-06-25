@@ -1,0 +1,62 @@
+name: vercel-deploy-ui
+description: Build and deploy the UI to Vercel
+
+inputs:
+  vercel-token:
+    description: Vercel API token
+    required: true
+  vercel-org-id:
+    description: Vercel organisation or account ID
+    required: true
+  vercel-project-id:
+    description: Vercel project ID
+    required: true
+  production:
+    description: Deploy to production (uses production env vars and adds --prod flag)
+    required: false
+    default: 'false'
+  alias:
+    description: Stable alias to assign after a preview deploy (e.g. cribsearch-dev.vercel.app)
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    - name: Install Vercel CLI
+      run: npm install --global vercel@latest
+      shell: bash
+
+    - name: Pull Vercel environment info
+      run: vercel pull --yes --environment=${{ inputs.production == 'true' && 'production' || 'preview' }} --token=${{ inputs.vercel-token }}
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
+    - name: Build
+      run: vercel build ${{ inputs.production == 'true' && '--prod' || '' }} --token=${{ inputs.vercel-token }}
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
+    - name: Deploy
+      id: deploy
+      run: echo "url=$(vercel deploy --prebuilt ${{ inputs.production == 'true' && '--prod' || '' }} --token=${{ inputs.vercel-token }})" >> $GITHUB_OUTPUT
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
+    - name: Assign stable alias
+      if: ${{ inputs.alias != '' }}
+      run: vercel alias ${{ steps.deploy.outputs.url }} ${{ inputs.alias }} --token=${{ inputs.vercel-token }}
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}

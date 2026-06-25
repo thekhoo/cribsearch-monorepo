@@ -3,7 +3,7 @@
  * Keep this package free of runtime dependencies — types only.
  */
 
-// ── Domain types (HomeFinder) ───────────────────────────────────────
+// ── Domain types (Cribsearch) ───────────────────────────────────────
 
 export type TransportMode = "walk" | "transit" | "cycle" | "drive";
 

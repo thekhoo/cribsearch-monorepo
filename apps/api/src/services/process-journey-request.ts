@@ -2,8 +2,8 @@ import type {
   AttachedPoi,
   JourneySearchMessage,
   Search,
-} from "@homefinder/shared-types";
-import { logger } from "@homefinder/logger";
+} from "@cribsearch/shared-types";
+import { logger } from "@cribsearch/logger";
 import type { JourneyRequestRepository } from "../ports/journey-request-repository";
 import type { MapsProvider } from "../ports/maps-provider";
 import { MapsError } from "../ports/maps-provider";

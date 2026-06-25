@@ -3,7 +3,7 @@ import type {
   AmenityGroup,
   TransportMode,
   TravelStat,
-} from "@homefinder/shared-types";
+} from "@cribsearch/shared-types";
 import type {
   DestinationTravelResult,
   MapsProvider,

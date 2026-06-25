@@ -1,6 +1,6 @@
-# HomeFinder Monorepo
+# Cribsearch Monorepo
 
-A monorepo containing the HomeFinder web frontend and backend API.
+A monorepo containing the Cribsearch web frontend and backend API.
 
 | Workspace                  | Stack                                  | Deploys to            |
 | -------------------------- | -------------------------------------- | --------------------- |
@@ -20,7 +20,7 @@ A monorepo containing the HomeFinder web frontend and backend API.
 ## Structure
 
 ```
-homefinder-monorepo/
+cribsearch-monorepo/
 ├── apps/
 │   ├── web/                  # Next.js + Tailwind → Vercel
 │   └── api/                  # Express → Lambda (AWS SAM)
@@ -37,7 +37,7 @@ homefinder-monorepo/
 │           ├── handler.ts    # API Lambda entry (serverless-http)
 │           └── worker.ts     # Worker Lambda entry (SQS consumer)
 ├── packages/
-│   ├── logger/               # shared Winston logger (@homefinder/logger)
+│   ├── logger/               # shared Winston logger (@cribsearch/logger)
 │   └── shared-types/         # request/response contracts
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
@@ -46,7 +46,7 @@ homefinder-monorepo/
 
 ## Prerequisites
 
-- Node 20 (`nvm use` reads `.nvmrc`)
+- Node 24 (`nvm use` reads `.nvmrc`)
 - pnpm 10 (`corepack enable`)
 - For deploying the API: [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) + Docker
 
@@ -65,9 +65,9 @@ pnpm dev                      # runs web + api together (Turborepo)
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
-| `GET` | `/homefinder/v1/health` | Health check |
-| `POST` | `/homefinder/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
-| `GET` | `/homefinder/v1/journey/:id` | Poll for Journey Search Response |
+| `GET` | `/cribsearch/v1/health` | Health check |
+| `POST` | `/cribsearch/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
+| `GET` | `/cribsearch/v1/journey/:id` | Poll for Journey Search Response |
 
 > **Note:** The deployed `GET /journey/:id` round-trip does not yet reflect worker
 > updates because the repository is an in-memory dummy (each Lambda has its own
@@ -92,47 +92,66 @@ and run requests against the dev server (`pnpm dev`).
 
 ## Deployment
 
-### Web → Vercel
+Deployment is automated via GitHub Actions. On push to `main`, `.github/workflows/deploy.yml`
+runs a `verify` job (typecheck/lint/test/build) and then, gated on it, deploys only
+the app that changed:
 
-Create a Vercel project pointing at this repo with:
+- **`deploy-ui`** → Vercel, via the vendored `./.github/actions/vercel-deploy-ui`
+  composite action (production deploy).
+- **`deploy-api`** → AWS, via the shared `sam-build-and-package` + `sam-deploy`
+  actions in `thekhoo/github-actions-shared`. AWS access is keyless (GitHub OIDC →
+  `github-actions-oidc-entry-role` → `github-actions-thekhoo-cribsearch-monorepo-deployment`).
+  Artefacts are packaged to `s3://aws-management-codepipeline/production/sam/<sha>/`
+  and deployed as the CloudFormation stack `production-cribsearch`.
 
-- **Root Directory:** `apps/web`
-- **Install Command:** `pnpm install` (run at repo root)
-- Set `NEXT_PUBLIC_API_URL` to the deployed API base URL.
+`ci.yml` runs the same verification on pull requests / merge queue only. See
+[ADR 0006](docs/adr/0006-cicd-github-actions.md) for the rationale.
 
-Vercel detects the Turborepo setup automatically.
+### What the API deploys
 
-### API → AWS (SAM)
+Two Lambda functions: **ApiFunction** (Express behind an HTTP API) and
+**WorkerFunction** (SQS consumer). An SQS queue (`JourneyQueue`) connects them,
+with a dead-letter queue (`JourneyDeadLetterQueue`, `maxReceiveCount: 3`). The
+SAM template (`apps/api/template.yaml`) is parameterised by `Environment`
+(`development | staging | production`); only `production` is wired today.
 
-The API deploys two Lambda functions:
+### One-time manual setup
 
-- **ApiFunction** — Express app behind API Gateway (HTTP API).
-- **WorkerFunction** — SQS consumer that processes Journey Search Requests.
+These prerequisites live outside the repo and must exist before the pipeline works:
 
-An SQS queue (`JourneyQueue`) connects them, with a dead-letter queue
-(`JourneyDeadLetterQueue`, `maxReceiveCount: 3`) for failed messages.
+1. **Vercel project** pointing at this repo — **Root Directory** `apps/web`. Note its
+   org ID and project ID, and create an API token.
+2. **GitHub `production` environment** with secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+   `VERCEL_PROJECT_ID`.
+3. **SSM Supabase params** (the API reads these at runtime; created with placeholder
+   values, replace with real credentials):
+
+   ```bash
+   aws ssm put-parameter --name /production/cribsearch/service/supabase/url \
+     --type String --value "$SUPABASE_URL" --overwrite
+   aws ssm put-parameter --name /production/cribsearch/service/supabase/service-role-key \
+     --type SecureString --value "$SUPABASE_SERVICE_ROLE_KEY" --overwrite
+   ```
+
+4. **`NEXT_PUBLIC_API_URL`** in Vercel → set to the API Gateway base URL output by the
+   first API deploy (stack output `ApiBaseUrl`).
+
+The AWS deployment role and the (placeholder) SSM params are already provisioned in
+account `020844256789` / `eu-west-2`.
+
+### Manual deploy (fallback)
 
 ```bash
 cd apps/api
 pnpm sam:build                # esbuild bundles TypeScript
-sam deploy --guided
-```
-
-Supabase credentials are read at runtime from SSM Parameter Store (not passed as
-stack parameters). Before deploying, create the parameters:
-
-```bash
-aws ssm put-parameter --name /production/homefinder/service/supabase/url \
-  --type String --value "$SUPABASE_URL"
-aws ssm put-parameter --name /production/homefinder/service/supabase/service-role-key \
-  --type SecureString --value "$SUPABASE_SERVICE_ROLE_KEY"
+sam deploy --guided --parameter-overrides Environment=production
 ```
 
 Run the API locally against the Lambda packaging with `pnpm sam:local` (requires Docker).
 
 ## Logging
 
-The API uses `@homefinder/logger` (Winston). In production (and by default),
+The API uses `@cribsearch/logger` (Winston). In production (and by default),
 logs are single-line JSON to stdout for CloudWatch Logs Insights. In
 `NODE_ENV=development`, output is colorized and human-readable. The level is
 controlled by `LOG_LEVEL` (default `info`). Under `NODE_ENV=test` the console
