@@ -46,7 +46,7 @@ cribsearch-monorepo/
 
 ## Prerequisites
 
-- Node 20 (`nvm use` reads `.nvmrc`)
+- Node 24 (`nvm use` reads `.nvmrc`)
 - pnpm 10 (`corepack enable`)
 - For deploying the API: [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) + Docker
 
