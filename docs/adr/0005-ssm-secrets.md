@@ -41,3 +41,13 @@ Store** instead of passing them as stack parameters or environment variables.
 - We adopt AWS Secrets Manager (e.g. for automatic rotation), or
 - the number of secrets grows and a bulk-fetch approach (e.g. SSM
   `GetParametersByPath`) becomes more efficient.
+
+## Update — 2026-06-25
+
+Eager cold-start `initSupabase()` was removed from the Lambda/server entry
+points: with the repository still in-memory, nothing consumes the Supabase
+client yet, and initialising it against placeholder SSM values crashed every
+route (including `/health`). The SSM machinery (`config/ssm.ts`, `db/supabase.ts`)
+remains; init will be reintroduced — ideally lazily, on first real use — when a
+Supabase-backed adapter is added. The only current `getSupabase()` consumer is
+the legacy `/properties` placeholder route, which will error if called until then.
