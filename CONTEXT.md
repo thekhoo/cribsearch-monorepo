@@ -79,3 +79,41 @@ chooses which modes apply **upfront**, before running a Search (at least one).
 Only the selected modes are computed — modes the user did not ask for are not
 calculated, to avoid unnecessary cost. The chosen modes are saved with the
 Search, so each shown destination reports a Travel Stat per selected mode.
+
+### Journey Search Request
+
+What the user **submits** to run a Search: the candidate address plus the
+upfront selection (modes, amenity categories, attached POIs) defined in ADR
+0002. Because computing the result means many slow, costly maps calls, a Journey
+Search Request is **accepted and processed asynchronously** rather than answered
+in one round-trip — it is recorded as pending, worked in the background, and its
+outcome is retrieved separately. It is distinct from the durable **Search**: the
+request is the in-flight job, the Search is the completed result that lands in
+**History**.
+
+### Journey Search Response
+
+What the system **sends back** for a Journey Search Request: the current
+processing state and, once complete, the resulting **Search** (its amenities and
+travel stats). Before completion it reports progress without a result; on
+failure it reports why. It is the response contract, not a stored entity — the
+durable record remains the **Search**.
+
+### Request Status
+
+The lifecycle of a **Journey Search Request**:
+
+- **Pending** — accepted and recorded, waiting to be picked up for processing.
+- **Processing** — actively being worked: the maps calls for the selected
+  destinations and modes are under way.
+- **Complete** — every selected destination/mode was computed; a full **Search**
+  result is available.
+- **PartialFailure** — the candidate address was usable and _some_ results were
+  computed, but one or more destination/mode lookups failed; the partial Search
+  is surfaced anyway, with the missing pieces marked.
+- **Failed** — no usable result (e.g. the candidate address could not be
+  resolved at all, or processing errored before any result was produced).
+
+`Complete`, `PartialFailure`, and `Failed` are terminal. Retrying a
+`PartialFailure` (or `Failed`) request is a **future** capability and out of
+scope for now.
