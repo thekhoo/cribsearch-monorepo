@@ -24,13 +24,17 @@ homefinder-monorepo/
 │   ├── web/                  # Next.js + Tailwind → Vercel
 │   └── api/                  # Express → Lambda (AWS SAM)
 │       └── src/
+│           ├── ports/        # port interfaces (repo, queue, maps)
+│           ├── adapters/     # port implementations (in-memory, SQS, stub)
 │           ├── routes/       # HTTP routes
-│           ├── services/     # business logic
+│           ├── services/     # business logic (validation, worker core)
 │           ├── db/           # Supabase access
 │           ├── config/       # env access
+│           ├── composition.ts # wires ports per environment
 │           ├── app.ts        # Express app (shared by server + handler)
 │           ├── server.ts     # local dev entry
-│           └── handler.ts    # Lambda entry (serverless-http)
+│           ├── handler.ts    # API Lambda entry (serverless-http)
+│           └── worker.ts     # Worker Lambda entry (SQS consumer)
 ├── packages/
 │   └── shared-types/         # request/response contracts
 ├── turbo.json                # task pipeline + caching
@@ -53,9 +57,21 @@ pnpm dev                      # runs web + api together (Turborepo)
 ```
 
 - Web: http://localhost:3000
-- API: http://localhost:3001 (e.g. `GET /health`, `GET /properties`)
+- API: http://localhost:3001
 
-The web app renders sample data until the API + Supabase `properties` table are wired up.
+### API endpoints
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET` | `/homefinder/v1/health` | Health check |
+| `POST` | `/homefinder/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
+| `GET` | `/homefinder/v1/journey/:id` | Poll for Journey Search Response |
+
+> **Note:** The deployed `GET /journey/:id` round-trip does not yet reflect worker
+> updates because the repository is an in-memory dummy (each Lambda has its own
+> memory). This will work once a real shared store replaces the dummy — see
+> [ADR 0003](docs/adr/0003-async-search-processing.md). Local dev and tests
+> round-trip correctly because the in-process queue shares one memory.
 
 ## Common commands
 
@@ -81,6 +97,14 @@ Create a Vercel project pointing at this repo with:
 Vercel detects the Turborepo setup automatically.
 
 ### API → AWS (SAM)
+
+The API deploys two Lambda functions:
+
+- **ApiFunction** — Express app behind API Gateway (HTTP API).
+- **WorkerFunction** — SQS consumer that processes Journey Search Requests.
+
+An SQS queue (`JourneyQueue`) connects them, with a dead-letter queue
+(`JourneyDeadLetterQueue`, `maxReceiveCount: 3`) for failed messages.
 
 ```bash
 cd apps/api
