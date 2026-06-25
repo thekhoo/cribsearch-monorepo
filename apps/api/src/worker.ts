@@ -6,14 +6,12 @@ import type {
 import type { JourneySearchMessage } from "@cribsearch/shared-types";
 import { logger, serializeError } from "@cribsearch/logger";
 import { ports } from "./composition";
-import { initSupabase } from "./db/supabase";
 import { processJourneyRequest } from "./services/process-journey-request";
 
 const log = logger.child({ component: "worker" });
-const init = initSupabase();
+// Supabase init deferred — see ADR 0005 (repo is currently in-memory).
 
 export const handler: SQSHandler = async (event) => {
-  await init;
   const failures: SQSBatchItemFailure[] = [];
 
   for (const record of event.Records) {

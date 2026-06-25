@@ -1,11 +1,9 @@
 import { logger } from "@cribsearch/logger";
 import { createApp } from "./app";
 import { env } from "./config/env";
-import { initSupabase } from "./db/supabase";
 import { ports } from "./composition";
 
 const start = async () => {
-  await initSupabase();
   const app = createApp(ports);
   app.listen(env.port, () => {
     logger.info("API listening", {
