@@ -55,6 +55,14 @@ runs:
         VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
 
+    - name: Promote to production
+      if: ${{ inputs.production == 'true' }}
+      run: vercel promote ${{ steps.deploy.outputs.url }} --token=${{ inputs.vercel-token }}
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+
     - name: Assign stable alias
       if: ${{ inputs.alias != '' }}
       run: vercel alias ${{ steps.deploy.outputs.url }} ${{ inputs.alias }} --token=${{ inputs.vercel-token }}
