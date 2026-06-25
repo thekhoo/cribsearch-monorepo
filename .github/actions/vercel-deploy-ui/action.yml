@@ -27,6 +27,8 @@ runs:
       with:
         node-version: 24
 
+    - uses: pnpm/action-setup@v4
+
     - name: Install Vercel CLI
       run: npm install --global vercel@latest
       shell: bash
