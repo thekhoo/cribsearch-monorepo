@@ -20,6 +20,17 @@ Parameters:
     Description: Supabase service-role key (server-side only).
 
 Resources:
+  JourneyDeadLetterQueue:
+    Type: AWS::SQS::Queue
+
+  JourneyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt JourneyDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
   ApiFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -38,6 +49,10 @@ Resources:
           NODE_ENV: production
           SUPABASE_URL: !Ref SupabaseUrl
           SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+          JOURNEY_QUEUE_URL: !Ref JourneyQueue
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt JourneyQueue.QueueName
       Events:
         Root:
           Type: HttpApi
@@ -50,7 +65,37 @@ Resources:
             Path: /{proxy+}
             Method: ANY
 
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        Format: cjs
+        EntryPoints:
+          - src/worker.ts
+    Properties:
+      Handler: worker.handler
+      Environment:
+        Variables:
+          NODE_ENV: production
+      Policies:
+        - SQSPollerPolicy:
+            QueueName: !GetAtt JourneyQueue.QueueName
+      Events:
+        JourneyQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt JourneyQueue.Arn
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
 Outputs:
   ApiBaseUrl:
     Description: Base URL for the deployed HTTP API.
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  JourneyQueueUrl:
+    Description: URL of the Journey Search SQS queue.
+    Value: !Ref JourneyQueue
