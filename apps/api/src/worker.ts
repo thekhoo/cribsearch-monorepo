@@ -6,11 +6,14 @@ import type {
 import type { JourneySearchMessage } from "@homefinder/shared-types";
 import { logger, serializeError } from "@homefinder/logger";
 import { ports } from "./composition";
+import { initSupabase } from "./db/supabase";
 import { processJourneyRequest } from "./services/process-journey-request";
 
 const log = logger.child({ component: "worker" });
+const init = initSupabase();
 
 export const handler: SQSHandler = async (event) => {
+  await init;
   const failures: SQSBatchItemFailure[] = [];
 
   for (const record of event.Records) {
