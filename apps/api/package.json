@@ -13,6 +13,7 @@
     "sam:local": "sam local start-api --port 3001"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.1075.0",
     "@aws-sdk/client-sqs": "^3.1075.0",
     "@homefinder/logger": "workspace:*",
     "@homefinder/shared-types": "workspace:*",
