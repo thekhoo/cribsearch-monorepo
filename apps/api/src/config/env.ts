@@ -8,4 +8,5 @@ export const env = {
   supabaseUrl: process.env.SUPABASE_URL ?? "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   journeyQueueUrl: process.env.JOURNEY_QUEUE_URL ?? "",
+  logLevel: process.env.LOG_LEVEL ?? "info",
 } as const;

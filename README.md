@@ -7,6 +7,7 @@ A monorepo containing the HomeFinder web frontend and backend API.
 | `apps/web`                 | Next.js 15 (App Router) + Tailwind v4  | Vercel                |
 | `apps/api`                 | Express on Lambda (`serverless-http`)  | AWS (Lambda + API GW) |
 | `packages/shared-types`    | TypeScript types shared web ↔ api      | —                     |
+| `packages/logger`          | Shared Winston logger (JSON + dev)     | —                     |
 
 - **Package manager / orchestration:** pnpm workspaces + [Turborepo](https://turbo.build)
 - **Data layer:** Supabase (Postgres) via `@supabase/supabase-js`
@@ -36,6 +37,7 @@ homefinder-monorepo/
 │           ├── handler.ts    # API Lambda entry (serverless-http)
 │           └── worker.ts     # Worker Lambda entry (SQS consumer)
 ├── packages/
+│   ├── logger/               # shared Winston logger (@homefinder/logger)
 │   └── shared-types/         # request/response contracts
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
@@ -120,6 +122,18 @@ sam deploy --guided \
 ```
 
 Run the API locally against the Lambda packaging with `pnpm sam:local` (requires Docker).
+
+## Logging
+
+The API uses `@homefinder/logger` (Winston). In production (and by default),
+logs are single-line JSON to stdout for CloudWatch Logs Insights. In
+`NODE_ENV=development`, output is colorized and human-readable. The level is
+controlled by `LOG_LEVEL` (default `info`). Under `NODE_ENV=test` the console
+transport is silent.
+
+HTTP request logs carry a `requestId` (from `x-request-id` / `x-amzn-trace-id`
+or a generated UUID). The async processing pipeline correlates on
+`journeyRequestId`. See [ADR 0004](docs/adr/0004-structured-logging.md).
 
 ## Conventions
 
