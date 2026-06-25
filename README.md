@@ -115,10 +115,17 @@ An SQS queue (`JourneyQueue`) connects them, with a dead-letter queue
 ```bash
 cd apps/api
 pnpm sam:build                # esbuild bundles TypeScript
-sam deploy --guided \
-  --parameter-overrides \
-    SupabaseUrl=$SUPABASE_URL \
-    SupabaseServiceRoleKey=$SUPABASE_SERVICE_ROLE_KEY
+sam deploy --guided
+```
+
+Supabase credentials are read at runtime from SSM Parameter Store (not passed as
+stack parameters). Before deploying, create the parameters:
+
+```bash
+aws ssm put-parameter --name /production/homefinder/service/supabase/url \
+  --type String --value "$SUPABASE_URL"
+aws ssm put-parameter --name /production/homefinder/service/supabase/service-role-key \
+  --type SecureString --value "$SUPABASE_SERVICE_ROLE_KEY"
 ```
 
 Run the API locally against the Lambda packaging with `pnpm sam:local` (requires Docker).

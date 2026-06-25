@@ -10,15 +10,6 @@ Globals:
     Timeout: 30
     MemorySize: 512
 
-Parameters:
-  SupabaseUrl:
-    Type: String
-    Description: Supabase project URL.
-  SupabaseServiceRoleKey:
-    Type: String
-    NoEcho: true
-    Description: Supabase service-role key (server-side only).
-
 Resources:
   JourneyDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -47,12 +38,14 @@ Resources:
       Environment:
         Variables:
           NODE_ENV: production
-          SUPABASE_URL: !Ref SupabaseUrl
-          SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
           JOURNEY_QUEUE_URL: !Ref JourneyQueue
       Policies:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
+        - SSMParameterReadPolicy:
+            ParameterName: production/homefinder/service/supabase/*
+        - KMSDecryptPolicy:
+            KeyId: alias/aws/ssm
       Events:
         Root:
           Type: HttpApi
@@ -84,6 +77,10 @@ Resources:
       Policies:
         - SQSPollerPolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
+        - SSMParameterReadPolicy:
+            ParameterName: production/homefinder/service/supabase/*
+        - KMSDecryptPolicy:
+            KeyId: alias/aws/ssm
       Events:
         JourneyQueueEvent:
           Type: SQS
