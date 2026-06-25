@@ -1,0 +1,23 @@
+meta {
+  name: Post Journey Search
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/homefinder/v1/journey
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "address": "123 Main St, Sydney NSW 2000",
+    "modes": ["walk", "transit"],
+    "amenityCategories": ["supermarket", "park"],
+    "pois": [
+      { "label": "Work", "address": "456 George St, Sydney NSW 2000" }
+    ],
+    "nickname": "Sydney CBD"
+  }
+}

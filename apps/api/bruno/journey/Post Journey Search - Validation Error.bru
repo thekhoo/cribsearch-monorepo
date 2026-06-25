@@ -1,0 +1,20 @@
+meta {
+  name: Post Journey Search - Validation Error
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/homefinder/v1/journey
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "address": "",
+    "modes": [],
+    "amenityCategories": [],
+    "pois": []
+  }
+}

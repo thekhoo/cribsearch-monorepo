@@ -73,6 +73,10 @@ pnpm dev                      # runs web + api together (Turborepo)
 > [ADR 0003](docs/adr/0003-async-search-processing.md). Local dev and tests
 > round-trip correctly because the in-process queue shares one memory.
 
+A [Bruno](https://www.usebruno.com/) collection is checked in at
+`apps/api/bruno/`. Open it in the Bruno app, select the **local** environment,
+and run requests against the dev server (`pnpm dev`).
+
 ## Common commands
 
 | Command          | Description                                  |

@@ -1,0 +1,15 @@
+meta {
+  name: Get Journey Search
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/homefinder/v1/journey/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: jr-1
+}

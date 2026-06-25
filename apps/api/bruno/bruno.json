@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "HomeFinder API",
+  "type": "collection",
+  "ignore": ["node_modules"]
+}
