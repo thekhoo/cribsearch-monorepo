@@ -1,5 +1,5 @@
 import serverless from "serverless-http";
 import { createApp } from "./app";
+import { ports } from "./composition";
 
-/** AWS Lambda entry point. API Gateway proxies all requests to the Express app. */
-export const handler = serverless(createApp());
+export const handler = serverless(createApp(ports));

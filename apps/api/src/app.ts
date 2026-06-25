@@ -7,15 +7,23 @@ import express, {
 import type { ApiError } from "@homefinder/shared-types";
 import { healthRouter } from "./routes/health";
 import { propertiesRouter } from "./routes/properties";
+import { createJourneyRouter } from "./routes/journey";
+import type { Ports } from "./composition";
 
-/** Builds the Express app. Shared by the local server and the Lambda handler. */
-export const createApp = (): Express => {
+export const createApp = (ports?: Ports): Express => {
   const app = express();
 
   app.use(express.json());
 
+  // Legacy routes
   app.use("/health", healthRouter);
   app.use("/properties", propertiesRouter);
+
+  // v1 routes
+  app.use("/homefinder/v1/health", healthRouter);
+  if (ports) {
+    app.use("/homefinder/v1/journey", createJourneyRouter(ports));
+  }
 
   // 404 fallback
   app.use((_req: Request, res: Response) => {
