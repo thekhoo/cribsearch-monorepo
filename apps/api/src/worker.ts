@@ -4,8 +4,11 @@ import type {
   SQSHandler,
 } from "aws-lambda";
 import type { JourneySearchMessage } from "@homefinder/shared-types";
+import { logger, serializeError } from "@homefinder/logger";
 import { ports } from "./composition";
 import { processJourneyRequest } from "./services/process-journey-request";
+
+const log = logger.child({ component: "worker" });
 
 export const handler: SQSHandler = async (event) => {
   const failures: SQSBatchItemFailure[] = [];
@@ -13,14 +16,18 @@ export const handler: SQSHandler = async (event) => {
   for (const record of event.Records) {
     try {
       const msg = JSON.parse(record.body) as JourneySearchMessage;
-      console.info(`[worker] processing message for request ${msg.journeyRequestId}`);
+      log.info("processing message", {
+        journeyRequestId: msg.journeyRequestId,
+      });
       await processJourneyRequest(msg, {
         repo: ports.repo,
         maps: ports.maps,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[worker] failed to process record ${record.messageId}: ${message}`);
+      log.error("failed to process record", {
+        messageId: record.messageId,
+        err: serializeError(err),
+      });
       failures.push({ itemIdentifier: record.messageId });
     }
   }

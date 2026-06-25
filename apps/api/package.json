@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.1075.0",
+    "@homefinder/logger": "workspace:*",
     "@homefinder/shared-types": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
     "express": "^4.21.2",

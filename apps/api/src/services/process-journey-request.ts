@@ -3,6 +3,7 @@ import type {
   JourneySearchMessage,
   Search,
 } from "@homefinder/shared-types";
+import { logger } from "@homefinder/logger";
 import type { JourneyRequestRepository } from "../ports/journey-request-repository";
 import type { MapsProvider } from "../ports/maps-provider";
 import { MapsError } from "../ports/maps-provider";
@@ -23,15 +24,19 @@ export const processJourneyRequest = async (
   { repo, maps }: Ports,
 ): Promise<void> => {
   const { journeyRequestId: id } = msg;
+  const log = logger.child({
+    component: "process-journey",
+    journeyRequestId: id,
+  });
 
   const existing = await repo.getById(id);
   if (existing && TERMINAL_STATUSES.has(existing.status)) {
-    console.info(`[processJourneyRequest] request ${id} already terminal (${existing.status}), skipping`);
+    log.info("request already terminal, skipping", { status: existing.status });
     return;
   }
 
   await repo.markProcessing(id);
-  console.info(`[processJourneyRequest] processing request ${id}`);
+  log.info("processing request");
 
   try {
     const amenityGroups = await maps.findAmenities(
@@ -62,7 +67,7 @@ export const processJourneyRequest = async (
           throw err;
         }
         const message = err instanceof Error ? err.message : String(err);
-        console.warn(`[processJourneyRequest] POI "${poi.label}" failed: ${message}`);
+        log.warn("POI failed", { poi: poi.label, reason: message });
         poiErrors.push(`${poi.label}: ${message}`);
       }
     }
@@ -81,19 +86,19 @@ export const processJourneyRequest = async (
     if (poiErrors.length > 0) {
       const errorSummary = `${String(poiErrors.length)} destination(s) failed: ${poiErrors.join("; ")}`;
       await repo.saveResult(id, "PartialFailure", search, errorSummary);
-      console.info(`[processJourneyRequest] request ${id} completed with PartialFailure`);
+      log.info("request completed with PartialFailure");
     } else {
       await repo.saveResult(id, "Complete", search);
-      console.info(`[processJourneyRequest] request ${id} completed successfully`);
+      log.info("request completed successfully");
     }
   } catch (err) {
     if (err instanceof MapsError) {
       if (err.kind === "transient") {
-        console.warn(`[processJourneyRequest] transient error for request ${id}, will retry`);
+        log.warn("transient error, will retry");
         throw err;
       }
       await repo.saveResult(id, "Failed", undefined, err.message);
-      console.info(`[processJourneyRequest] request ${id} failed: ${err.message}`);
+      log.info("request failed", { reason: err.message });
       return;
     }
     throw err;

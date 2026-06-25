@@ -23,6 +23,9 @@ importers:
       '@aws-sdk/client-sqs':
         specifier: ^3.1075.0
         version: 3.1075.0
+      '@homefinder/logger':
+        specifier: workspace:*
+        version: link:../../packages/logger
       '@homefinder/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

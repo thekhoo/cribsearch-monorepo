@@ -1,8 +1,11 @@
 import type { JourneySearchMessage } from "@homefinder/shared-types";
+import { logger } from "@homefinder/logger";
 import type { JourneyQueue } from "../ports/journey-queue";
 import type { JourneyRequestRepository } from "../ports/journey-request-repository";
 import type { MapsProvider } from "../ports/maps-provider";
 import { processJourneyRequest } from "../services/process-journey-request";
+
+const log = logger.child({ component: "in-process-queue" });
 
 export class InProcessJourneyQueue implements JourneyQueue {
   private lastEnqueue: Promise<void> = Promise.resolve();
@@ -29,7 +32,7 @@ export class InProcessJourneyQueue implements JourneyQueue {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.warn(`[InProcessJourneyQueue] swallowed error (simulates SQS retry): ${message}`);
+      log.warn("swallowed error (simulates SQS retry)", { reason: message });
     }
   }
 }

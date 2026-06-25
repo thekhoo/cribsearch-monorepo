@@ -1,6 +1,9 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { JourneySearchMessage } from "@homefinder/shared-types";
+import { logger } from "@homefinder/logger";
 import type { JourneyQueue } from "../ports/journey-queue";
+
+const log = logger.child({ component: "sqs-queue" });
 
 export class SqsJourneyQueue implements JourneyQueue {
   private readonly client: SQSClient;
@@ -16,6 +19,6 @@ export class SqsJourneyQueue implements JourneyQueue {
         MessageBody: JSON.stringify(msg),
       }),
     );
-    console.info(`[SqsJourneyQueue] enqueued request ${msg.journeyRequestId}`);
+    log.info("enqueued request", { journeyRequestId: msg.journeyRequestId });
   }
 }

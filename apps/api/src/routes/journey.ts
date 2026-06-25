@@ -29,7 +29,7 @@ export const createJourneyRouter = ({ repo, queue }: Ports): Router => {
       });
 
       const response: JourneySearchResponse = { id, status };
-      console.info(`[journey POST] accepted request ${id}`);
+      req.log.info("accepted journey request", { journeyRequestId: id });
       res.status(202).json(response);
     } catch (err) {
       next(err);
