@@ -10,12 +10,12 @@ A monorepo containing the Cribsearch web frontend and backend API.
 | `packages/logger`          | Shared Winston logger (JSON + dev)     | —                     |
 
 - **Package manager / orchestration:** pnpm workspaces + [Turborepo](https://turbo.build)
-- **Data layer:** Supabase (Postgres) via `@supabase/supabase-js`
+- **Data layer:** Neon (Postgres) via raw `pg` (node-postgres) driver + Atlas migrations (runtime `pg` wiring is forthcoming)
 - **Infra-as-code:** AWS SAM (`apps/api/template.yaml`)
 
 > Architecture decisions are recorded in [`docs/adr/`](docs/adr/). See
 > [ADR 0001](docs/adr/0001-backend-hosting.md) for why the API runs on AWS Lambda
-> with Supabase used as the database only.
+> with Neon used as the managed Postgres database.
 
 ## Structure
 
@@ -24,12 +24,16 @@ cribsearch-monorepo/
 ├── apps/
 │   ├── web/                  # Next.js + Tailwind → Vercel
 │   └── api/                  # Express → Lambda (AWS SAM)
+│       ├── atlas.hcl         # Atlas migration config (per-env)
+│       ├── db/
+│       │   └── bootstrap.sql # one-time superuser setup (DBs + roles)
+│       ├── migrations/       # versioned Atlas SQL migrations + atlas.sum
 │       └── src/
 │           ├── ports/        # port interfaces (repo, queue, maps)
 │           ├── adapters/     # port implementations (in-memory, SQS, stub)
 │           ├── routes/       # HTTP routes
 │           ├── services/     # business logic (validation, worker core)
-│           ├── db/           # Supabase access
+│           ├── db/           # database access
 │           ├── config/       # env access
 │           ├── composition.ts # wires ports per environment
 │           ├── app.ts        # Express app (shared by server + handler)
@@ -39,22 +43,87 @@ cribsearch-monorepo/
 ├── packages/
 │   ├── logger/               # shared Winston logger (@cribsearch/logger)
 │   └── shared-types/         # request/response contracts
+├── docker-compose.yml        # local Postgres (local_cribsearch)
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
 └── pnpm-workspace.yaml
 ```
 
+## Database & migrations
+
+Atlas runs via the official `arigaio/atlas` Docker image -- no local Atlas binary
+or Xcode installation is needed. The `pnpm --filter @cribsearch/api db:migrate:*`
+scripts wrap `docker run` calls so you never invoke Atlas directly.
+
+Each deployment universe gets its own Postgres database on Neon.
+See [ADR 0007](docs/adr/0007-per-universe-databases.md) for the rationale and
+[ADR 0008](docs/adr/0008-atlas-migrations.md) for the migration tool choice.
+
+| Universe    | Database                 | Admin (DDL / migrations)          | Read-write (app DML)              | Read-only                         |
+| ----------- | ------------------------ | --------------------------------- | --------------------------------- | --------------------------------- |
+| development | `development_cribsearch` | `development_cribsearch_admin`    | `development_cribsearch_rw`       | `development_cribsearch_ro`       |
+| staging     | `staging_cribsearch`     | `staging_cribsearch_admin`        | `staging_cribsearch_rw`           | `staging_cribsearch_ro`           |
+| production  | `production_cribsearch`  | `production_cribsearch_admin`     | `production_cribsearch_rw`        | `production_cribsearch_ro`        |
+| local       | `local_cribsearch`       | (Docker Compose default)          | —                                 | —                                 |
+
+### Bootstrap (one-time)
+
+Run `apps/api/db/bootstrap.sql` once as the Neon default/owner role
+(`neondb_owner`) to create the databases and three per-universe roles
+(admin / rw / ro). **Replace every `CHANGE_ME_*` placeholder password** in the
+script with real secrets before executing.
+
+### Local development
+
+`docker compose up -d` starts two Postgres containers and a one-shot migration
+service:
+
+- **`postgres`** -- the application database (`local_cribsearch`, port 5432).
+- **`postgres-dev`** -- an ephemeral scratch database used by Atlas for
+  validate (`local_cribsearch_dev`, port 5433). No named volume; data is
+  disposable.
+- **`migrate`** -- a one-shot Atlas container that automatically applies all
+  pending migrations to `local_cribsearch` once `postgres` is healthy. No manual
+  `pnpm` step is needed for routine local dev.
+
+On first run, the `migrate` service generates `apps/api/migrations/atlas.sum`,
+which should be committed to the repository.
+
+```bash
+docker compose up -d          # starts postgres + postgres-dev, auto-applies migrations
+```
+
+The `pnpm --filter @cribsearch/api db:migrate:*` scripts remain available for
+authoring new migrations (`hash`), validating migration integrity
+(`validate`), and ad-hoc applies.
+
+### Migration commands
+
+All commands use the `arigaio/atlas` Docker image under the hood. No local Atlas
+binary is required.
+
+| Command | Description |
+| ------- | ----------- |
+| `pnpm --filter @cribsearch/api db:migrate:apply` | Apply pending migrations to the local DB |
+| `pnpm --filter @cribsearch/api db:migrate:validate` | Validate migration directory integrity (uses `postgres-dev`) |
+| `pnpm --filter @cribsearch/api db:migrate:new` | Create a new empty migration file (edit it on the host, then run `hash`) |
+| `pnpm --filter @cribsearch/api db:migrate:hash` | Regenerate `atlas.sum` checksum |
+
+`atlas.sum` must be generated with Atlas (`db:migrate:hash`) and committed
+alongside any migration changes. CI will reject PRs with a stale checksum.
+
 ## Prerequisites
 
 - Node 24 (`nvm use` reads `.nvmrc`)
 - pnpm 10 (`corepack enable`)
-- For deploying the API: [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) + Docker
+- Docker (for local Postgres, Atlas migrations via `arigaio/atlas`, and SAM local testing)
+- For deploying the API: [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 
 ## Getting started
 
 ```bash
 pnpm install
-cp .env.example .env          # fill in Supabase credentials
+cp .env.example .env          # fill in Neon / Postgres credentials
 pnpm dev                      # runs web + api together (Turborepo)
 ```
 
@@ -98,14 +167,19 @@ the app that changed:
 
 - **`deploy-ui`** → Vercel, via the vendored `./.github/actions/vercel-deploy-ui`
   composite action (production deploy).
+- **`migrate`** → runs `atlas migrate apply` against `production_cribsearch`
+  before the API deploy, ensuring the database schema is up to date before new
+  code goes live. The connection string is read from SSM.
 - **`deploy-api`** → AWS, via the shared `sam-build-and-package` + `sam-deploy`
   actions in `thekhoo/github-actions-shared`. AWS access is keyless (GitHub OIDC →
   `github-actions-oidc-entry-role` → `github-actions-thekhoo-cribsearch-monorepo-deployment`).
   Artefacts are packaged to `s3://aws-management-codepipeline/production/sam/<sha>/`
   and deployed as the CloudFormation stack `production-cribsearch`.
 
-`ci.yml` runs the same verification on pull requests / merge queue only. See
-[ADR 0006](docs/adr/0006-cicd-github-actions.md) for the rationale.
+`ci.yml` runs the same verification on pull requests / merge queue, plus
+`atlas migrate validate` to catch migration issues
+before merge. See [ADR 0006](docs/adr/0006-cicd-github-actions.md) for the
+rationale.
 
 ### What the API deploys
 
@@ -123,18 +197,53 @@ These prerequisites live outside the repo and must exist before the pipeline wor
    org ID and project ID, and create an API token.
 2. **GitHub `production` environment** with secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
    `VERCEL_PROJECT_ID`.
-3. **SSM Supabase params** (the API reads these at runtime; created with placeholder
-   values, replace with real credentials):
-
-   ```bash
-   aws ssm put-parameter --name /production/cribsearch/service/supabase/url \
-     --type String --value "$SUPABASE_URL" --overwrite
-   aws ssm put-parameter --name /production/cribsearch/service/supabase/service-role-key \
-     --type SecureString --value "$SUPABASE_SERVICE_ROLE_KEY" --overwrite
-   ```
+3. **~~SSM Supabase params~~ (DEPRECATED):** the legacy Supabase SSM parameters
+   (`/production/cribsearch/service/supabase/url` and
+   `/production/cribsearch/service/supabase/service-role-key`) are no longer used.
+   The database now uses the per-field Postgres SSM parameters under
+   `/{universe}/cribsearch/service/postgres/*` (see step 6 below).
 
 4. **`NEXT_PUBLIC_API_URL`** in Vercel → set to the API Gateway base URL output by the
    first API deploy (stack output `ApiBaseUrl`).
+5. **Database bootstrap:** run `apps/api/db/bootstrap.sql` once as the Neon
+   default/owner role (`neondb_owner`) on the Neon host
+   (`ep-xxxx.<region>.aws.neon.tech`; use the `-pooler` variant for app/Lambda
+   connections). Replace every `CHANGE_ME_*` placeholder with real secrets. This
+   creates the per-universe databases and three roles per universe (admin / rw / ro).
+   The CI migrate job reads the `admin/user` / `admin/password` SSM params
+   (`*_admin` role, for DDL); the app runtime uses the flat `user` / `password`
+   params (`*_rw` role). Run it over the **direct** Neon endpoint (not `-pooler`,
+   so `\c` between databases works):
+
+   ```bash
+   psql "postgresql://neondb_owner:<PWD>@ep-xxxx.<region>.aws.neon.tech/neondb?sslmode=require" \
+     -f apps/api/db/bootstrap.sql
+   ```
+
+6. **SSM Postgres connection params:** provision the per-universe connection
+   parameters used by Atlas migrations and (later) the Lambda runtime:
+
+   ```bash
+   P=/production/cribsearch/service/postgres
+   # shared
+   aws ssm put-parameter --region eu-west-2 --name $P/port     --type String       --value "5432" --overwrite
+   aws ssm put-parameter --region eu-west-2 --name $P/database --type String       --value "production_cribsearch" --overwrite
+   # app runtime (read-write) — read by resolvePostgresConfig; POOLED Neon host
+   aws ssm put-parameter --region eu-west-2 --name $P/host     --type String       --value "ep-xxxx-pooler.<region>.aws.neon.tech" --overwrite
+   aws ssm put-parameter --region eu-west-2 --name $P/user     --type String       --value "production_cribsearch_rw" --overwrite
+   aws ssm put-parameter --region eu-west-2 --name $P/password --type SecureString  --value "<rw-password>" --overwrite
+   # migrations (admin / DDL) — read by the CI migrate job; DIRECT host (no -pooler) for Atlas advisory locks
+   aws ssm put-parameter --region eu-west-2 --name $P/admin/host     --type String       --value "ep-xxxx.<region>.aws.neon.tech" --overwrite
+   aws ssm put-parameter --region eu-west-2 --name $P/admin/user     --type String       --value "production_cribsearch_admin" --overwrite
+   aws ssm put-parameter --region eu-west-2 --name $P/admin/password --type SecureString  --value "<admin-password>" --overwrite
+   ```
+
+7. **Deployment role update:** attach the policy in
+   `.github/iam/deploy-role-postgres-ssm-policy.json` to the deployment role
+   `github-actions-thekhoo-cribsearch-monorepo-deployment` (provisioned outside
+   this repo). This grants `ssm:GetParameter` / `ssm:GetParameters` /
+   `ssm:GetParametersByPath` for `/production/cribsearch/service/postgres/*` and
+   the corresponding `kms:Decrypt` for SecureString values.
 
 The AWS deployment role and the (placeholder) SSM params are already provisioned in
 account `020844256789` / `eu-west-2`.

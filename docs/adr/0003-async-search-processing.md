@@ -63,7 +63,7 @@ Accept Search submissions **asynchronously** and process them in the background.
 - **Known limitation (current slice):** the repository is an **in-memory dummy**.
   Each Lambda has its own process memory, so on AWS the worker's update is not
   visible to `GET` — the deployed round-trip will not complete until a real
-  shared store (Supabase) is wired behind `JourneyRequestRepository`. Local dev
+  shared store (Neon Postgres) is wired behind `JourneyRequestRepository`. Local dev
   and tests round-trip correctly because the in-process queue shares one memory.
 - **Deferred:** auto-flipping rows stuck in `Processing` after DLQ exhaustion (a
   reaper); retrying `Failed`/`PartialFailure` requests; the attach-by-id POI

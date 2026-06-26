@@ -36,9 +36,10 @@ Deploy from GitHub Actions on push to `main`:
 ## Consequences
 
 - Deploys require AWS prerequisites that live outside this repo: the deployment
-  role, the SSM Supabase params (`/production/cribsearch/service/supabase/*`),
-  and the GitHub `production` environment secrets (`VERCEL_*`). These are
-  documented in the README.
+  role, the SSM Postgres params (`/production/cribsearch/service/postgres/*`) for
+  the Neon database (the legacy `/service/supabase/*` params are deprecated), and
+  the GitHub `production` environment secrets (`VERCEL_*`). These are documented
+  in the README.
 - Reusing the org's shared actions and artefact bucket couples this repo's
   pipeline to conventions in `thekhoo/github-actions-shared` (e.g. the
   `<environment>/sam/<sha>/` S3 layout and the OIDC entry-role ARN).

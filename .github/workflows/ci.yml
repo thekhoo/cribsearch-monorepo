@@ -31,3 +31,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ariga/setup-atlas@v0
+
+      - name: Validate migrations
+        working-directory: apps/api
+        run: atlas migrate validate --env local
