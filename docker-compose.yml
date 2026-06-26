@@ -6,13 +6,13 @@ services:
     environment:
       POSTGRES_USER: cribsearch
       POSTGRES_PASSWORD: cribsearch
-      POSTGRES_DB: cribsearch_local
+      POSTGRES_DB: local_cribsearch
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cribsearch -d cribsearch_local"]
+      test: ["CMD-SHELL", "pg_isready -U cribsearch -d local_cribsearch"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,7 @@ services:
     volumes:
       - ./apps/api:/data
     environment:
-      DATABASE_URL: postgresql://cribsearch:cribsearch@postgres:5432/cribsearch_local?sslmode=disable
+      DATABASE_URL: postgresql://cribsearch:cribsearch@postgres:5432/local_cribsearch?sslmode=disable
     entrypoint: ["/bin/sh", "-c"]
     command: ["atlas migrate hash --dir file://migrations && atlas migrate apply --env local"]
     restart: "no"
@@ -36,7 +36,7 @@ services:
     environment:
       POSTGRES_USER: cribsearch
       POSTGRES_PASSWORD: cribsearch
-      POSTGRES_DB: cribsearch_dev
+      POSTGRES_DB: local_cribsearch_dev
     ports:
       - "5433:5432"
 

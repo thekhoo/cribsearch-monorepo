@@ -52,7 +52,7 @@ configuration, and integrates cleanly with GitHub Actions via `ariga/setup-atlas
   on pull requests to catch migration issues before merge.
 - Local development uses the same Atlas CLI and migration files, with the
   connection string pointing at the Docker Compose Postgres
-  (`cribsearch_local`).
+  (`local_cribsearch`).
 
 ## Revisit if
 

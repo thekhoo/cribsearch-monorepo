@@ -45,7 +45,7 @@ Key design points:
    string at `/{universe}/cribsearch/service/postgres/connection-string`
    (SecureString). See [ADR 0005](0005-ssm-secrets.md).
 4. **Local dev uses Docker.** A vanilla Postgres 16 container (`docker-compose.yml`
-   at repo root) provides `cribsearch_local`. The cloud `development_cribsearch`
+   at repo root) provides `local_cribsearch`. The cloud `development_cribsearch`
    database is reserved for the deployed development universe.
 
 ## Consequences

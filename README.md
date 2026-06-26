@@ -43,7 +43,7 @@ cribsearch-monorepo/
 ├── packages/
 │   ├── logger/               # shared Winston logger (@cribsearch/logger)
 │   └── shared-types/         # request/response contracts
-├── docker-compose.yml        # local Postgres (cribsearch_local)
+├── docker-compose.yml        # local Postgres (local_cribsearch)
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
 └── pnpm-workspace.yaml
@@ -64,7 +64,7 @@ See [ADR 0007](docs/adr/0007-per-universe-databases.md) for the rationale and
 | development | `development_cribsearch` | `development_cribsearch_admin`    | `development_cribsearch_rw`       | `development_cribsearch_ro`       |
 | staging     | `staging_cribsearch`     | `staging_cribsearch_admin`        | `staging_cribsearch_rw`           | `staging_cribsearch_ro`           |
 | production  | `production_cribsearch`  | `production_cribsearch_admin`     | `production_cribsearch_rw`        | `production_cribsearch_ro`        |
-| local       | `cribsearch_local`       | (Docker Compose default)          | —                                 | —                                 |
+| local       | `local_cribsearch`       | (Docker Compose default)          | —                                 | —                                 |
 
 ### Bootstrap (one-time)
 
@@ -78,12 +78,12 @@ script with real secrets before executing.
 `docker compose up -d` starts two Postgres containers and a one-shot migration
 service:
 
-- **`postgres`** -- the application database (`cribsearch_local`, port 5432).
+- **`postgres`** -- the application database (`local_cribsearch`, port 5432).
 - **`postgres-dev`** -- an ephemeral scratch database used by Atlas for
-  validate/lint (`cribsearch_dev`, port 5433). No named volume; data is
+  validate/lint (`local_cribsearch_dev`, port 5433). No named volume; data is
   disposable.
 - **`migrate`** -- a one-shot Atlas container that automatically applies all
-  pending migrations to `cribsearch_local` once `postgres` is healthy. No manual
+  pending migrations to `local_cribsearch` once `postgres` is healthy. No manual
   `pnpm` step is needed for routine local dev.
 
 On first run, the `migrate` service generates `apps/api/migrations/atlas.sum`,

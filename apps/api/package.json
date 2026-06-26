@@ -11,9 +11,9 @@
     "test": "vitest run --passWithNoTests",
     "sam:build": "sam build",
     "sam:local": "sam local start-api --port 3001",
-    "db:migrate:apply": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default -e DATABASE_URL=\"${DATABASE_URL:-postgresql://cribsearch:cribsearch@postgres:5432/cribsearch_local?sslmode=disable}\" arigaio/atlas:latest migrate apply --env local",
-    "db:migrate:validate": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default arigaio/atlas:latest migrate validate --env local --dev-url \"postgresql://cribsearch:cribsearch@postgres-dev:5432/cribsearch_dev?sslmode=disable\"",
-    "db:migrate:lint": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default arigaio/atlas:latest migrate lint --env local --latest 1 --dev-url \"postgresql://cribsearch:cribsearch@postgres-dev:5432/cribsearch_dev?sslmode=disable\"",
+    "db:migrate:apply": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default -e DATABASE_URL=\"${DATABASE_URL:-postgresql://cribsearch:cribsearch@postgres:5432/local_cribsearch?sslmode=disable}\" arigaio/atlas:latest migrate apply --env local",
+    "db:migrate:validate": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default arigaio/atlas:latest migrate validate --env local --dev-url \"postgresql://cribsearch:cribsearch@postgres-dev:5432/local_cribsearch_dev?sslmode=disable\"",
+    "db:migrate:lint": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default arigaio/atlas:latest migrate lint --env local --latest 1 --dev-url \"postgresql://cribsearch:cribsearch@postgres-dev:5432/local_cribsearch_dev?sslmode=disable\"",
     "db:migrate:new": "docker run --rm -v \"$(pwd):/data\" -w /data arigaio/atlas:latest migrate new --dir file://migrations",
     "db:migrate:hash": "docker run --rm -v \"$(pwd):/data\" -w /data arigaio/atlas:latest migrate hash --dir file://migrations"
   },
