@@ -17,7 +17,7 @@ env:
   AWS_REGION: eu-west-2
   OIDC_ENTRY_ROLE: arn:aws:iam::020844256789:role/github-actions-oidc-entry-role
   CREATE_DEPLOYMENT_ROLE: arn:aws:iam::020844256789:role/github-actions-create-deployment-role
-  DEPLOYMENT_ROLE: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+  DEPLOYMENT_ROLE: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-production-deployment
 
 jobs:
   verify:
@@ -125,9 +125,10 @@ jobs:
         run: |
           aws cloudformation deploy \
             --region "$AWS_REGION" \
-            --stack-name cribsearch-pipeline \
+            --stack-name production-cribsearch-pipeline \
             --template-file infrastructure/pipeline/template.yaml \
             --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides Environment=production \
             --no-fail-on-empty-changeset
 
   migrate:
