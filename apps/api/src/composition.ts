@@ -1,4 +1,4 @@
-import { env } from "./config/env";
+import { env } from "./shared/config/env";
 import type { JourneyRequestRepository } from "./ports/journey-request-repository";
 import type { JourneyQueue } from "./ports/journey-queue";
 import type { MapsProvider } from "./ports/maps-provider";

@@ -1,6 +1,6 @@
 import { logger } from "@cribsearch/logger";
 import { createApp } from "./app";
-import { env } from "./config/env";
+import { env } from "./shared/config/env";
 import { ports } from "./composition";
 
 const start = async () => {
