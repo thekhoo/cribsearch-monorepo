@@ -2,6 +2,9 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Cribsearch API — Express on Lambda behind API Gateway (HTTP API).
 
+# Source + build (Makefile, esbuild) live in apps/api; CodeUri points there so the
+# makefile build method resolves src/ and node_modules relative to that directory.
+
 Parameters:
   Environment:
     Type: String
@@ -37,6 +40,7 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
+      CodeUri: ../../apps/api
       Handler: handler.handler
       Environment:
         Variables:
@@ -46,7 +50,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/postgres/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
@@ -66,6 +70,7 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
+      CodeUri: ../../apps/api
       Handler: worker.handler
       Environment:
         Variables:
@@ -74,7 +79,7 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/cribsearch/service/supabase/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/postgres/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
