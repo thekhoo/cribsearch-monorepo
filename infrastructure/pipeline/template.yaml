@@ -1,18 +1,30 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   Cribsearch CI/CD pipeline stack. Defines the GitHub Actions deployment role
-  used to deploy the application stack (production-cribsearch) and run migrations.
-  This stack is deployed FIRST (before migrate/deploy-api) by
+  used to deploy the application stack (<universe>-cribsearch) and run migrations.
+  Parameterised per universe (Environment) so each universe gets its own role and
+  resource scopes. This stack is deployed FIRST (before migrate/deploy-api) by
   github-actions-create-deployment-role, which is assumed via the shared
   github-actions-oidc-entry-role. See docs/adr/0009-deploy-role-as-code.md.
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment universe (drives the role name and resource scopes).
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Default: production
 
 Resources:
   DeploymentRole:
     Type: AWS::IAM::Role
     Properties:
-      # Name is fixed so the ARN is stable and referenced unchanged by the workflow.
-      RoleName: github-actions-thekhoo-cribsearch-monorepo-deployment
-      Description: GitHub Actions SAM deploy role for cribsearch-monorepo (production)
+      # Name carries the universe so per-universe roles are globally unique; the
+      # workflow references the matching ARN for the universe it deploys.
+      RoleName: !Sub "github-actions-thekhoo-cribsearch-monorepo-${Environment}-deployment"
+      Description: !Sub "GitHub Actions SAM deploy role for cribsearch-monorepo (${Environment})"
       Tags:
         - Key: Project
           Value: thekhoo-cribsearch-monorepo
@@ -54,7 +66,7 @@ Resources:
                   - cloudformation:ExecuteChangeSet
                   - cloudformation:DeleteChangeSet
                   - cloudformation:ListChangeSets
-                Resource: !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/production-cribsearch*/*"
+                Resource: !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${Environment}-cribsearch*/*"
               - Sid: CloudFormationGlobal
                 Effect: Allow
                 Action:
@@ -84,7 +96,7 @@ Resources:
                   - lambda:ListTags
                   - lambda:PutFunctionConcurrency
                   - lambda:DeleteFunctionConcurrency
-                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:production-cribsearch*"
+                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${Environment}-cribsearch*"
               - Sid: LambdaEventSourceMapping
                 Effect: Allow
                 Action:
@@ -108,7 +120,7 @@ Resources:
                   - sqs:ListQueueTags
                   - sqs:TagQueue
                   - sqs:UntagQueue
-                Resource: !Sub "arn:aws:sqs:*:${AWS::AccountId}:production-cribsearch*"
+                Resource: !Sub "arn:aws:sqs:*:${AWS::AccountId}:${Environment}-cribsearch*"
               - Sid: ApiGateway
                 Effect: Allow
                 Action:
@@ -139,7 +151,7 @@ Resources:
                   - iam:TagRole
                   - iam:UntagRole
                   - iam:PassRole
-                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/production-cribsearch*"
+                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/${Environment}-cribsearch*"
               - Sid: Logs
                 Effect: Allow
                 Action:
@@ -150,7 +162,7 @@ Resources:
                   - logs:TagResource
                   - logs:UntagResource
                   - logs:ListTagsForResource
-                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/production-cribsearch*"
+                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${Environment}-cribsearch*"
               - Sid: LogsDescribe
                 Effect: Allow
                 Action: logs:DescribeLogGroups
@@ -165,7 +177,7 @@ Resources:
                   - ssm:GetParametersByPath
                   - ssm:AddTagsToResource
                   - ssm:ListTagsForResource
-                Resource: !Sub "arn:aws:ssm:*:${AWS::AccountId}:parameter/production/cribsearch/*"
+                Resource: !Sub "arn:aws:ssm:*:${AWS::AccountId}:parameter/${Environment}/cribsearch/*"
               - Sid: SSMDescribe
                 Effect: Allow
                 Action: ssm:DescribeParameters
