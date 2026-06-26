@@ -9,7 +9,7 @@
     "lint": "echo \"(api) no lint configured yet\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "sam:build": "sam build",
+    "sam:build": "sam build --template-file ../../infrastructure/stack/template.yaml",
     "sam:local": "sam local start-api --port 3001",
     "db:migrate:apply": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default -e DATABASE_URL=\"${DATABASE_URL:-postgresql://cribsearch:cribsearch@postgres:5432/local_cribsearch?sslmode=disable}\" arigaio/atlas:latest migrate apply --env local",
     "db:migrate:validate": "docker run --rm -v \"$(pwd):/data\" -w /data --network cribsearch_default arigaio/atlas:latest migrate validate --env local --dev-url \"postgresql://cribsearch:cribsearch@postgres-dev:5432/local_cribsearch_dev?sslmode=disable\"",

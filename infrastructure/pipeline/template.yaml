@@ -1,0 +1,197 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Cribsearch CI/CD pipeline stack. Defines the GitHub Actions deployment role
+  used to deploy the application stack (production-cribsearch) and run migrations.
+  This stack is deployed FIRST (before migrate/deploy-api) by
+  github-actions-create-deployment-role, which is assumed via the shared
+  github-actions-oidc-entry-role. See docs/adr/0009-deploy-role-as-code.md.
+
+Resources:
+  DeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # Name is fixed so the ARN is stable and referenced unchanged by the workflow.
+      RoleName: github-actions-thekhoo-cribsearch-monorepo-deployment
+      Description: GitHub Actions SAM deploy role for cribsearch-monorepo (production)
+      Tags:
+        - Key: Project
+          Value: thekhoo-cribsearch-monorepo
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: repository
+          Value: thekhoo/cribsearch-monorepo
+      # Only the shared OIDC entry role may assume this role (role-chaining):
+      #   GitHub OIDC -> github-actions-oidc-entry-role -> this role.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/github-actions-oidc-entry-role"
+            Action:
+              - sts:AssumeRole
+              - sts:TagSession
+      Policies:
+        - PolicyName: CribsearchSamDeploy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: CloudFormationStack
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:GetTemplate
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ListStackResources
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:ListChangeSets
+                Resource: !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/production-cribsearch*/*"
+              - Sid: CloudFormationGlobal
+                Effect: Allow
+                Action:
+                  - cloudformation:ListStacks
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:CreateChangeSet
+                Resource:
+                  - "arn:aws:cloudformation:*:aws:transform/Serverless-2016-10-31"
+                  - "*"
+              - Sid: Lambda
+                Effect: Allow
+                Action:
+                  - lambda:CreateFunction
+                  - lambda:DeleteFunction
+                  - lambda:GetFunction
+                  - lambda:GetFunctionConfiguration
+                  - lambda:GetFunctionCodeSigningConfig
+                  - lambda:UpdateFunctionCode
+                  - lambda:UpdateFunctionConfiguration
+                  - lambda:ListVersionsByFunction
+                  - lambda:PublishVersion
+                  - lambda:AddPermission
+                  - lambda:RemovePermission
+                  - lambda:GetPolicy
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - lambda:ListTags
+                  - lambda:PutFunctionConcurrency
+                  - lambda:DeleteFunctionConcurrency
+                Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:production-cribsearch*"
+              - Sid: LambdaEventSourceMapping
+                Effect: Allow
+                Action:
+                  - lambda:CreateEventSourceMapping
+                  - lambda:DeleteEventSourceMapping
+                  - lambda:GetEventSourceMapping
+                  - lambda:UpdateEventSourceMapping
+                  - lambda:ListEventSourceMappings
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - lambda:ListTags
+                Resource: "*"
+              - Sid: SQS
+                Effect: Allow
+                Action:
+                  - sqs:CreateQueue
+                  - sqs:DeleteQueue
+                  - sqs:GetQueueAttributes
+                  - sqs:SetQueueAttributes
+                  - sqs:GetQueueUrl
+                  - sqs:ListQueueTags
+                  - sqs:TagQueue
+                  - sqs:UntagQueue
+                Resource: !Sub "arn:aws:sqs:*:${AWS::AccountId}:production-cribsearch*"
+              - Sid: ApiGateway
+                Effect: Allow
+                Action:
+                  - apigateway:GET
+                  - apigateway:POST
+                  - apigateway:PUT
+                  - apigateway:PATCH
+                  - apigateway:DELETE
+                  - apigateway:TagResource
+                  - apigateway:UntagResource
+                Resource:
+                  - "arn:aws:apigateway:*::/apis"
+                  - "arn:aws:apigateway:*::/apis/*"
+                  - "arn:aws:apigateway:*::/tags/*"
+              - Sid: IAMRole
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:PassRole
+                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/production-cribsearch*"
+              - Sid: Logs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:DeleteLogGroup
+                  - logs:PutRetentionPolicy
+                  - logs:DeleteRetentionPolicy
+                  - logs:TagResource
+                  - logs:UntagResource
+                  - logs:ListTagsForResource
+                Resource: !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/production-cribsearch*"
+              - Sid: LogsDescribe
+                Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: "*"
+              - Sid: SSMManage
+                Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - ssm:AddTagsToResource
+                  - ssm:ListTagsForResource
+                Resource: !Sub "arn:aws:ssm:*:${AWS::AccountId}:parameter/production/cribsearch/*"
+              - Sid: SSMDescribe
+                Effect: Allow
+                Action: ssm:DescribeParameters
+                Resource: "*"
+              # Required so the migrate job can read SecureString DB passwords
+              # (ssm get-parameter --with-decryption). The previous manual role
+              # was missing this, which would have failed decryption.
+              - Sid: KmsDecryptForSsm
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com"
+              - Sid: S3Artefacts
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource:
+                  - "arn:aws:s3:::aws-management-codepipeline"
+                  - "arn:aws:s3:::aws-management-codepipeline/*"
+
+Outputs:
+  DeploymentRoleArn:
+    Description: ARN of the GitHub Actions deployment role.
+    Value: !GetAtt DeploymentRole.Arn
