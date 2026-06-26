@@ -80,7 +80,7 @@ service:
 
 - **`postgres`** -- the application database (`local_cribsearch`, port 5432).
 - **`postgres-dev`** -- an ephemeral scratch database used by Atlas for
-  validate/lint (`local_cribsearch_dev`, port 5433). No named volume; data is
+  validate (`local_cribsearch_dev`, port 5433). No named volume; data is
   disposable.
 - **`migrate`** -- a one-shot Atlas container that automatically applies all
   pending migrations to `local_cribsearch` once `postgres` is healthy. No manual
@@ -95,7 +95,7 @@ docker compose up -d          # starts postgres + postgres-dev, auto-applies mig
 
 The `pnpm --filter @cribsearch/api db:migrate:*` scripts remain available for
 authoring new migrations (`hash`), validating migration integrity
-(`validate`/`lint`), and ad-hoc applies.
+(`validate`), and ad-hoc applies.
 
 ### Migration commands
 
@@ -106,7 +106,6 @@ binary is required.
 | ------- | ----------- |
 | `pnpm --filter @cribsearch/api db:migrate:apply` | Apply pending migrations to the local DB |
 | `pnpm --filter @cribsearch/api db:migrate:validate` | Validate migration directory integrity (uses `postgres-dev`) |
-| `pnpm --filter @cribsearch/api db:migrate:lint` | Lint migrations for issues (uses `postgres-dev`) |
 | `pnpm --filter @cribsearch/api db:migrate:new` | Create a new empty migration file (edit it on the host, then run `hash`) |
 | `pnpm --filter @cribsearch/api db:migrate:hash` | Regenerate `atlas.sum` checksum |
 
@@ -178,7 +177,7 @@ the app that changed:
   and deployed as the CloudFormation stack `production-cribsearch`.
 
 `ci.yml` runs the same verification on pull requests / merge queue, plus
-`atlas migrate validate` and `atlas migrate lint` to catch migration issues
+`atlas migrate validate` to catch migration issues
 before merge. See [ADR 0006](docs/adr/0006-cicd-github-actions.md) for the
 rationale.
 

@@ -11,7 +11,7 @@ project needs a migration tool that can:
 - produce **reviewable, versioned SQL migrations** checked into the repo,
 - apply those migrations to multiple per-universe databases from a Node-centric CI
   pipeline (no JVM or heavy runtime),
-- validate and lint migration files on pull requests before merge.
+- validate migration files on pull requests before merge.
 
 ## Decision
 
@@ -21,7 +21,7 @@ Use **Atlas** (ariga.io/atlas) for schema migrations.
   migration).
 - **Configuration:** `apps/api/atlas.hcl`, parameterised by environment.
 - **Dev database:** an ephemeral `docker://postgres/16/dev` scratch container,
-  used by Atlas for diffing, validating, and linting migrations locally and in CI.
+  used by Atlas for diffing and validating migrations locally and in CI.
 - **Checksum file:** `apps/api/migrations/atlas.sum` ensures migration integrity.
   It must be regenerated with Atlas (`pnpm --filter @cribsearch/api db:migrate:hash`)
   and committed whenever migrations change.
@@ -48,8 +48,9 @@ configuration, and integrates cleanly with GitHub Actions via `ariga/setup-atlas
   against the target database **before** the `deploy-api` job, ensuring the
   schema is up to date before new code is deployed. Only `production` is wired
   today.
-- `.github/workflows/ci.yml` runs `atlas migrate validate` and `atlas migrate lint`
-  on pull requests to catch migration issues before merge.
+- `.github/workflows/ci.yml` runs `atlas migrate validate`
+  on pull requests to catch migration issues before merge. (`atlas migrate lint`
+  became an Atlas Pro feature in v0.38, so CI uses `validate` only.)
 - Local development uses the same Atlas CLI and migration files, with the
   connection string pointing at the Docker Compose Postgres
   (`local_cribsearch`).

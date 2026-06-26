@@ -42,7 +42,3 @@ jobs:
       - name: Validate migrations
         working-directory: apps/api
         run: atlas migrate validate --env local
-
-      - name: Lint migrations
-        working-directory: apps/api
-        run: atlas migrate lint --env local --latest 1
