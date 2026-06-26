@@ -29,7 +29,7 @@ the service-role key).
 - Backend logic is a standard Express app (`apps/api/src/app.ts`), reused by
   both the local dev server and the Lambda handler — portable off Supabase if
   needed.
-- Infrastructure is defined with AWS SAM (`apps/api/template.yaml`).
+- Infrastructure is defined with AWS SAM (`infrastructure/stack/template.yaml`).
 - We run/pay for AWS Lambda + API Gateway in addition to Supabase. Supabase's
   free tier covers the database (500 MB/project) for early development; note
   free projects pause after ~7 days idle, so a paid plan is needed for an

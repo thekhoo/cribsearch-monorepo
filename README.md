@@ -11,7 +11,7 @@ A monorepo containing the Cribsearch web frontend and backend API.
 
 - **Package manager / orchestration:** pnpm workspaces + [Turborepo](https://turbo.build)
 - **Data layer:** Neon (Postgres) via raw `pg` (node-postgres) driver + Atlas migrations (runtime `pg` wiring is forthcoming)
-- **Infra-as-code:** AWS SAM (`apps/api/template.yaml`)
+- **Infra-as-code:** AWS SAM app stack (`infrastructure/stack/template.yaml`) + the CI/CD deploy role as CloudFormation (`infrastructure/pipeline/template.yaml`)
 
 > Architecture decisions are recorded in [`docs/adr/`](docs/adr/). See
 > [ADR 0001](docs/adr/0001-backend-hosting.md) for why the API runs on AWS Lambda
@@ -43,6 +43,9 @@ cribsearch-monorepo/
 ├── packages/
 │   ├── logger/               # shared Winston logger (@cribsearch/logger)
 │   └── shared-types/         # request/response contracts
+├── infrastructure/
+│   ├── pipeline/template.yaml # CloudFormation: GitHub Actions deploy role
+│   └── stack/template.yaml    # SAM: API stack (Lambdas, SQS, HTTP API)
 ├── docker-compose.yml        # local Postgres (local_cribsearch)
 ├── turbo.json                # task pipeline + caching
 ├── tsconfig.base.json        # shared TS config
@@ -165,16 +168,22 @@ Deployment is automated via GitHub Actions. On push to `main`, `.github/workflow
 runs a `verify` job (typecheck/lint/test/build) and then, gated on it, deploys only
 the app that changed:
 
+- **`deploy-pipeline`** → deploys the CI/CD pipeline stack
+  (`infrastructure/pipeline/template.yaml`, CloudFormation stack
+  `cribsearch-pipeline`) which **defines the deployment role itself**. Runs first
+  so `migrate`/`deploy-api` have a role to assume. Authenticates via GitHub OIDC →
+  `github-actions-oidc-entry-role` → `github-actions-create-deployment-role`.
 - **`deploy-ui`** → Vercel, via the vendored `./.github/actions/vercel-deploy-ui`
   composite action (production deploy).
 - **`migrate`** → runs `atlas migrate apply` against `production_cribsearch`
-  before the API deploy, ensuring the database schema is up to date before new
-  code goes live. The connection string is read from SSM.
+  before the API deploy. Authenticates GitHub OIDC →
+  `github-actions-oidc-entry-role` → `github-actions-thekhoo-cribsearch-monorepo-deployment`
+  (the role created by `deploy-pipeline`); reads the DB connection from SSM.
 - **`deploy-api`** → AWS, via the shared `sam-build-and-package` + `sam-deploy`
-  actions in `thekhoo/github-actions-shared`. AWS access is keyless (GitHub OIDC →
-  `github-actions-oidc-entry-role` → `github-actions-thekhoo-cribsearch-monorepo-deployment`).
-  Artefacts are packaged to `s3://aws-management-codepipeline/production/sam/<sha>/`
-  and deployed as the CloudFormation stack `production-cribsearch`.
+  actions in `thekhoo/github-actions-shared` (template
+  `infrastructure/stack/template.yaml`). Same keyless OIDC role-chain. Artefacts
+  are packaged to `s3://aws-management-codepipeline/production/sam/<sha>/` and
+  deployed as the CloudFormation stack `production-cribsearch`.
 
 `ci.yml` runs the same verification on pull requests / merge queue, plus
 `atlas migrate validate` to catch migration issues
@@ -186,7 +195,7 @@ rationale.
 Two Lambda functions: **ApiFunction** (Express behind an HTTP API) and
 **WorkerFunction** (SQS consumer). An SQS queue (`JourneyQueue`) connects them,
 with a dead-letter queue (`JourneyDeadLetterQueue`, `maxReceiveCount: 3`). The
-SAM template (`apps/api/template.yaml`) is parameterised by `Environment`
+SAM template (`infrastructure/stack/template.yaml`) is parameterised by `Environment`
 (`development | staging | production`); only `production` is wired today.
 
 ### One-time manual setup
@@ -238,15 +247,23 @@ These prerequisites live outside the repo and must exist before the pipeline wor
    aws ssm put-parameter --region eu-west-2 --name $P/admin/password --type SecureString  --value "<admin-password>" --overwrite
    ```
 
-7. **Deployment role update:** attach the policy in
-   `.github/iam/deploy-role-postgres-ssm-policy.json` to the deployment role
-   `github-actions-thekhoo-cribsearch-monorepo-deployment` (provisioned outside
-   this repo). This grants `ssm:GetParameter` / `ssm:GetParameters` /
-   `ssm:GetParametersByPath` for `/production/cribsearch/service/postgres/*` and
-   the corresponding `kms:Decrypt` for SecureString values.
+7. **Deployment role (now Infrastructure-as-Code):** the role
+   `github-actions-thekhoo-cribsearch-monorepo-deployment` is defined in
+   `infrastructure/pipeline/template.yaml` and created/updated by the
+   `deploy-pipeline` job (which assumes `github-actions-create-deployment-role`).
+   Its policy already includes the SSM read + `kms:Decrypt` the migrate job needs.
+   Because a role of that name was originally created **manually**, delete it once
+   so the first `deploy-pipeline` run can create it from the template:
 
-The AWS deployment role and the (placeholder) SSM params are already provisioned in
-account `020844256789` / `eu-west-2`.
+   ```bash
+   aws iam delete-role-policy --role-name github-actions-thekhoo-cribsearch-monorepo-deployment --policy-name CribsearchSamDeploy
+   aws iam delete-role --role-name github-actions-thekhoo-cribsearch-monorepo-deployment
+   ```
+
+The SSM params live in account `020844256789` / `eu-west-2`. The deployment role is
+managed by the `deploy-pipeline` job from `infrastructure/pipeline/template.yaml`; the
+shared `github-actions-oidc-entry-role` and `github-actions-create-deployment-role` are
+account-wide and provisioned externally (in the `aws-management` repo).
 
 ### Manual deploy (fallback)
 

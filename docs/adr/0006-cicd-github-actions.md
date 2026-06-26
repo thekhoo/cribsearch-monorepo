@@ -49,3 +49,14 @@ Deploy from GitHub Actions on push to `main`:
 - We wire `development`/`staging` universes (more stacks, more secrets), or
 - the API moves off SAM, or we adopt an AWS-native pipeline (CodePipeline)
   instead of GitHub Actions.
+
+## Update — 2026-06-26
+
+The deployment role is no longer provisioned by hand. It is now defined as code in
+`infrastructure/pipeline/template.yaml` and deployed by a new **`deploy-pipeline`**
+job that runs **before** `migrate` and `deploy-api`. That job authenticates GitHub
+OIDC → `github-actions-oidc-entry-role` → `github-actions-create-deployment-role`
+(a shared bootstrap role from the `aws-management` repo) and `cloudformation deploy`s
+the `cribsearch-pipeline` stack. The application SAM template moved from
+`apps/api/template.yaml` to `infrastructure/stack/template.yaml` (its `CodeUri`
+points back at `apps/api`). See [ADR 0009](0009-deploy-role-as-code.md).
