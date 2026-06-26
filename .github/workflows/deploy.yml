@@ -164,7 +164,11 @@ jobs:
           USER=$(get $P/admin/user)
           PW=$(get $P/admin/password)
           enc() { jq -rn --arg s "$1" '$s|@uri'; }
-          URL="postgresql://$(enc "$USER"):$(enc "$PW")@${HOST}:${PORT}/$(enc "$DB")?sslmode=require"
+          # search_path=public scopes Atlas to the public schema, so its
+          # revision table lives at public.atlas_schema_revisions. Without it
+          # Atlas runs in database scope and expects a dedicated
+          # atlas_schema_revisions schema, which Neon does not auto-create.
+          URL="postgresql://$(enc "$USER"):$(enc "$PW")@${HOST}:${PORT}/$(enc "$DB")?sslmode=require&search_path=public"
           echo "::add-mask::$PW"
           echo "::add-mask::$URL"
           echo "DATABASE_URL=$URL" >> "$GITHUB_ENV"
