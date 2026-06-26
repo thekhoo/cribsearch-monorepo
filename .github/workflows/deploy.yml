@@ -13,6 +13,12 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  AWS_REGION: eu-west-2
+  OIDC_ENTRY_ROLE: arn:aws:iam::020844256789:role/github-actions-oidc-entry-role
+  CREATE_DEPLOYMENT_ROLE: arn:aws:iam::020844256789:role/github-actions-create-deployment-role
+  DEPLOYMENT_ROLE: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -42,6 +48,7 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       api: ${{ steps.filter.outputs.api }}
       migrate: ${{ steps.filter.outputs.migrate }}
+      pipeline: ${{ steps.filter.outputs.pipeline }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,6 +67,7 @@ jobs:
               - '.github/workflows/deploy.yml'
             api:
               - 'apps/api/**'
+              - 'infrastructure/stack/**'
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'package.json'
@@ -69,6 +77,9 @@ jobs:
             migrate:
               - 'apps/api/migrations/**'
               - 'apps/api/atlas.hcl'
+              - '.github/workflows/deploy.yml'
+            pipeline:
+              - 'infrastructure/pipeline/**'
               - '.github/workflows/deploy.yml'
 
   deploy-ui:
@@ -86,28 +97,64 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           production: 'true'
 
-  # NOTE: The deployment role (arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment)
-  # needs ssm:GetParameter and ssm:GetParametersByPath permission for
-  # /production/cribsearch/service/postgres/*.
-  # That permission is provisioned outside this repo.
-  # The OIDC role-chaining may need to match the org's shared-action auth pattern.
-  migrate:
+  # Deploys the CI/CD pipeline stack (the deployment role itself) FIRST, so the
+  # migrate and deploy-api jobs have a role to assume. Auth chain:
+  #   GitHub OIDC -> github-actions-oidc-entry-role -> github-actions-create-deployment-role
+  deploy-pipeline:
     runs-on: ubuntu-latest
     needs: [verify, changes]
-    if: ${{ needs.changes.outputs.migrate == 'true' }}
+    if: ${{ needs.changes.outputs.pipeline == 'true' }}
     environment: production
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Assume OIDC entry role
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
-          aws-region: eu-west-2
+          role-to-assume: ${{ env.OIDC_ENTRY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume create-deployment-role (role chaining)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.CREATE_DEPLOYMENT_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+
+      - name: Deploy pipeline stack (deployment role)
+        run: |
+          aws cloudformation deploy \
+            --region "$AWS_REGION" \
+            --stack-name cribsearch-pipeline \
+            --template-file infrastructure/pipeline/template.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+  migrate:
+    runs-on: ubuntu-latest
+    needs: [verify, changes, deploy-pipeline]
+    if: ${{ !cancelled() && needs.changes.outputs.migrate == 'true' && needs.deploy-pipeline.result != 'failure' }}
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume OIDC entry role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ENTRY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume deployment role (role chaining)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOYMENT_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
 
       - name: Resolve DATABASE_URL from SSM
         run: |
           P=/production/cribsearch/service/postgres
-          get() { aws ssm get-parameter --region eu-west-2 --name "$1" ${2:+--with-decryption} --query Parameter.Value --output text; }
+          get() { aws ssm get-parameter --region "$AWS_REGION" --name "$1" ${2:+--with-decryption} --query Parameter.Value --output text; }
           # admin/host is the DIRECT (non-pooler) Neon endpoint — Atlas needs a
           # session connection for advisory locks / DDL, which the pooler breaks.
           HOST=$(get $P/admin/host); PORT=$(get $P/port); DB=$(get $P/database)
@@ -127,8 +174,8 @@ jobs:
 
   deploy-api:
     runs-on: ubuntu-latest
-    needs: [verify, changes, migrate]
-    if: ${{ !cancelled() && needs.changes.outputs.api == 'true' && needs.migrate.result != 'failure' }}
+    needs: [verify, changes, deploy-pipeline, migrate]
+    if: ${{ !cancelled() && needs.changes.outputs.api == 'true' && needs.deploy-pipeline.result != 'failure' && needs.migrate.result != 'failure' }}
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -146,13 +193,13 @@ jobs:
         id: package
         with:
           environment: production
-          template-file: apps/api/template.yaml
-          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+          template-file: infrastructure/stack/template.yaml
+          deployment-role-arn: ${{ env.DEPLOYMENT_ROLE }}
 
       - uses: thekhoo/github-actions-shared/.github/actions/sam-deploy@main
         with:
           environment: production
           packaged-template-uri: ${{ steps.package.outputs.packaged-template-uri }}
-          deployment-role-arn: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+          deployment-role-arn: ${{ env.DEPLOYMENT_ROLE }}
           stack-name: production-cribsearch
           parameter-overrides: Environment=production
