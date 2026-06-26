@@ -41,3 +41,28 @@ the service-role key).
 
 - Operational cost/complexity of AWS outweighs the control it provides, or
 - backend logic stays thin enough that PostgREST + Edge Functions would suffice.
+
+## Update — 2026-06-25
+
+The database remains Supabase Postgres, but the access path has changed: the API
+now connects via the raw **`pg`** (node-postgres) driver instead of
+`@supabase/supabase-js`. This is driven by the per-universe multi-database design
+(see [ADR 0007](0007-per-universe-databases.md)): each deployment stage gets its
+own Postgres database on a single Supabase project, and hosted Supabase's
+PostgREST / Studio only reach the default `postgres` database — the extra
+per-universe databases are reachable only via a direct Postgres connection.
+
+The Path A vs Path B decision (Express on AWS Lambda) is unchanged.
+
+## Update — 2026-06-26 (migrated to Neon)
+
+The managed Postgres host has moved from **Supabase** to **Neon**
+(https://neon.tech). The data access layer is unchanged: vanilla Postgres via the
+raw `pg` (node-postgres) driver, with Atlas migrations.
+
+**Reason for the switch:** Supabase's direct Postgres endpoint is IPv6-only
+(unless the paid IPv4 add-on is purchased). This broke connectivity from AWS
+Lambda and GitHub Actions CI runners, which operate on IPv4-only networks. Neon
+provides an IPv4-reachable, serverless-friendly Postgres endpoint out of the box.
+
+The Path A decision (Express on AWS Lambda) remains unchanged.
