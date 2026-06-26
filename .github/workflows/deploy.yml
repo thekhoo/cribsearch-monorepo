@@ -41,6 +41,7 @@ jobs:
     outputs:
       web: ${{ steps.filter.outputs.web }}
       api: ${{ steps.filter.outputs.api }}
+      migrate: ${{ steps.filter.outputs.migrate }}
     steps:
       - uses: actions/checkout@v4
 
@@ -65,6 +66,10 @@ jobs:
               - 'turbo.json'
               - 'tsconfig.base.json'
               - '.github/workflows/deploy.yml'
+            migrate:
+              - 'apps/api/migrations/**'
+              - 'apps/api/atlas.hcl'
+              - '.github/workflows/deploy.yml'
 
   deploy-ui:
     runs-on: ubuntu-latest
@@ -81,10 +86,49 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           production: 'true'
 
-  deploy-api:
+  # NOTE: The deployment role (arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment)
+  # needs ssm:GetParameter and ssm:GetParametersByPath permission for
+  # /production/cribsearch/service/postgres/*.
+  # That permission is provisioned outside this repo.
+  # The OIDC role-chaining may need to match the org's shared-action auth pattern.
+  migrate:
     runs-on: ubuntu-latest
     needs: [verify, changes]
-    if: ${{ needs.changes.outputs.api == 'true' }}
+    if: ${{ needs.changes.outputs.migrate == 'true' }}
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::020844256789:role/github-actions-thekhoo-cribsearch-monorepo-deployment
+          aws-region: eu-west-2
+
+      - name: Resolve DATABASE_URL from SSM
+        run: |
+          P=/production/cribsearch/service/postgres
+          get() { aws ssm get-parameter --region eu-west-2 --name "$1" ${2:+--with-decryption} --query Parameter.Value --output text; }
+          # admin/host is the DIRECT (non-pooler) Neon endpoint — Atlas needs a
+          # session connection for advisory locks / DDL, which the pooler breaks.
+          HOST=$(get $P/admin/host); PORT=$(get $P/port); DB=$(get $P/database)
+          USER=$(get $P/admin/user)
+          PW=$(get $P/admin/password decrypt)
+          enc() { jq -rn --arg s "$1" '$s|@uri'; }
+          URL="postgresql://$(enc "$USER"):$(enc "$PW")@${HOST}:${PORT}/$(enc "$DB")?sslmode=require"
+          echo "::add-mask::$PW"
+          echo "::add-mask::$URL"
+          echo "DATABASE_URL=$URL" >> "$GITHUB_ENV"
+
+      - uses: ariga/setup-atlas@v0
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: atlas migrate apply --env production
+
+  deploy-api:
+    runs-on: ubuntu-latest
+    needs: [verify, changes, migrate]
+    if: ${{ !cancelled() && needs.changes.outputs.api == 'true' && needs.migrate.result != 'failure' }}
     environment: production
     steps:
       - uses: actions/checkout@v4
