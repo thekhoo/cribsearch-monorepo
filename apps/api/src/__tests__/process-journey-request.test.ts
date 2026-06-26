@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { processJourneyRequest } from "../services/process-journey-request";
 import { InMemoryJourneyRepository } from "../adapters/in-memory-journey-repository";
-import { StubMapsProvider } from "../adapters/stub-maps-provider";
+import { StubMapsProvider } from "../shared/maps/stub-maps-provider";
 import type { JourneySearchMessage } from "@cribsearch/shared-types";
 
 const baseMsg: Omit<JourneySearchMessage, "journeyRequestId"> = {

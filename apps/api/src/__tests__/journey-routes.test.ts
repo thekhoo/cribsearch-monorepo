@@ -3,7 +3,7 @@ import request from "supertest";
 import { createApp } from "../app";
 import { InMemoryJourneyRepository } from "../adapters/in-memory-journey-repository";
 import { InProcessJourneyQueue } from "../adapters/in-process-journey-queue";
-import { StubMapsProvider } from "../adapters/stub-maps-provider";
+import { StubMapsProvider } from "../shared/maps/stub-maps-provider";
 import type { Ports } from "../composition";
 import type {
   JourneySearchRequest,

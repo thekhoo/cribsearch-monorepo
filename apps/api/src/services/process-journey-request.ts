@@ -5,8 +5,8 @@ import type {
 } from "@cribsearch/shared-types";
 import { logger } from "@cribsearch/logger";
 import type { JourneyRequestRepository } from "../ports/journey-request-repository";
-import type { MapsProvider } from "../ports/maps-provider";
-import { MapsError } from "../ports/maps-provider";
+import type { MapsProvider } from "../shared/maps/maps-provider";
+import { MapsError } from "../shared/maps/maps-provider";
 
 interface Ports {
   repo: JourneyRequestRepository;

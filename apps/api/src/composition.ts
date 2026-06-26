@@ -1,11 +1,11 @@
 import { env } from "./shared/config/env";
 import type { JourneyRequestRepository } from "./ports/journey-request-repository";
 import type { JourneyQueue } from "./ports/journey-queue";
-import type { MapsProvider } from "./ports/maps-provider";
+import type { MapsProvider } from "./shared/maps/maps-provider";
 import { InMemoryJourneyRepository } from "./adapters/in-memory-journey-repository";
 import { InProcessJourneyQueue } from "./adapters/in-process-journey-queue";
 import { SqsJourneyQueue } from "./adapters/sqs-journey-queue";
-import { StubMapsProvider } from "./adapters/stub-maps-provider";
+import { StubMapsProvider } from "./shared/maps/stub-maps-provider";
 
 export interface Ports {
   repo: JourneyRequestRepository;
