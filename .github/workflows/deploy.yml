@@ -155,12 +155,14 @@ jobs:
       - name: Resolve DATABASE_URL from SSM
         run: |
           P=/production/cribsearch/service/postgres
-          get() { aws ssm get-parameter --region "$AWS_REGION" --name "$1" ${2:+--with-decryption} --query Parameter.Value --output text; }
+          # --with-decryption is a no-op for plain String params and required for
+          # SecureString params, so always pass it (host/user are SecureStrings).
+          get() { aws ssm get-parameter --region "$AWS_REGION" --name "$1" --with-decryption --query Parameter.Value --output text; }
           # admin/host is the DIRECT (non-pooler) Neon endpoint — Atlas needs a
           # session connection for advisory locks / DDL, which the pooler breaks.
           HOST=$(get $P/admin/host); PORT=$(get $P/port); DB=$(get $P/database)
           USER=$(get $P/admin/user)
-          PW=$(get $P/admin/password decrypt)
+          PW=$(get $P/admin/password)
           enc() { jq -rn --arg s "$1" '$s|@uri'; }
           URL="postgresql://$(enc "$USER"):$(enc "$PW")@${HOST}:${PORT}/$(enc "$DB")?sslmode=require"
           echo "::add-mask::$PW"
