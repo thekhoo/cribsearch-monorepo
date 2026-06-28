@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { uuidv7 } from "uuidv7";
 
 export interface DestinationInsert {
   category: string;
@@ -33,11 +34,12 @@ export const insertDestinations = async (
 ): Promise<void> => {
   if (rows.length === 0) return;
 
-  // Build parameter placeholders: each row contributes 9 params
+  // Build parameter placeholders: each row contributes 10 params
   const values: unknown[] = [];
   const placeholders = rows.map((row, i) => {
-    const base = i * 9;
+    const base = i * 10;
     values.push(
+      uuidv7(),
       searchId,
       row.category,
       row.name,
@@ -48,12 +50,12 @@ export const insertDestinations = async (
       row.driveMinutes,
       JSON.stringify(row.metadata),
     );
-    return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9})`;
+    return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10})`;
   });
 
   const sql = `
     INSERT INTO search_destinations
-      (search_id, category, name, address, walk_minutes, transit_minutes, cycle_minutes, drive_minutes, metadata)
+      (search_destination_id, search_id, category, name, address, walk_minutes, transit_minutes, cycle_minutes, drive_minutes, metadata)
     VALUES
       ${placeholders.join(",")}
     ON CONFLICT (search_id, address) DO NOTHING
