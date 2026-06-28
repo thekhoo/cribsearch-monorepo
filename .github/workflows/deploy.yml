@@ -185,7 +185,15 @@ jobs:
 
       - name: Apply repeatable grants
         working-directory: apps/api
-        run: psql "$DATABASE_URL" -v universe=production -v ON_ERROR_STOP=1 -f db/grants.sql
+        run: |
+          # DATABASE_URL carries `search_path=public` for Atlas, but that is not
+          # a valid libpq URI parameter, so psql rejects it. grants.sql qualifies
+          # every object with `SCHEMA public`, so search_path is unnecessary here:
+          # strip the query string and keep only sslmode=require. Re-mask the
+          # derived URL so the password cannot leak in logs.
+          PSQL_URL="${DATABASE_URL%%\?*}?sslmode=require"
+          echo "::add-mask::$PSQL_URL"
+          psql "$PSQL_URL" -v universe=production -v ON_ERROR_STOP=1 -f db/grants.sql
 
   deploy-api:
     runs-on: ubuntu-latest
