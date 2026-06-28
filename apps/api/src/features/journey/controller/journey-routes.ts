@@ -7,7 +7,7 @@ import type {
 import { validateJourneyRequest } from "../service/validate-journey-request";
 import { createJourneyRequest } from "../service/create-journey-request";
 import { getJourneyRequest } from "../service/get-journey-request";
-import { enqueueJourney } from "../../../shared/queue/sqs";
+import { enqueueJourney } from "../../../shared/service/queue";
 
 export const journeyRouter: Router = Router();
 

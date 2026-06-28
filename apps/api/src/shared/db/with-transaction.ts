@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { getPool } from "./pool";
+import { getPool } from "./postgres";
 
 export const withTransaction = async <T>(
   fn: (client: PoolClient) => Promise<T>,

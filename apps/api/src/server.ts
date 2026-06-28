@@ -1,7 +1,7 @@
 import { logger } from "@cribsearch/logger";
 import { createApp } from "./app";
 import { env } from "./shared/config/env";
-import { closePool } from "./shared/db/pool";
+import { closePool } from "./shared/db/postgres";
 
 const start = async () => {
   const app = createApp();

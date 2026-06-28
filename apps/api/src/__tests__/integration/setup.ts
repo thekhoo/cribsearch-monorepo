@@ -1,5 +1,5 @@
 import { afterAll } from "vitest";
-import { closePool } from "../../shared/db/pool";
+import { closePool } from "../../shared/db/postgres";
 
 process.env.PGHOST ??= "localhost";
 process.env.PGPORT ??= "5432";
