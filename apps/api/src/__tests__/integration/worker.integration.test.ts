@@ -16,7 +16,7 @@ const baseBody: JourneySearchRequest = {
 
 /** Insert a pending row and return its id. */
 const insertPending = async (): Promise<string> => {
-  const { id } = await withTransaction((client) => insertSearch(client, baseBody));
+  const { searchId: id } = await withTransaction((client) => insertSearch(client, baseBody));
   return id;
 };
 
@@ -106,7 +106,7 @@ describe("worker integration", () => {
       ...baseBody,
       pois: [],
     };
-    const { id } = await withTransaction((client) =>
+    const { searchId: id } = await withTransaction((client) =>
       insertSearch(client, requestNoPois),
     );
     const msg: JourneySearchMessage = { ...requestNoPois, journeyRequestId: id };

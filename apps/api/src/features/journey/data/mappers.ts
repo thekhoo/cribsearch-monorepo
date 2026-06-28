@@ -158,7 +158,7 @@ export const rowsToSearch = (
   });
 
   return {
-    id: searchRow.id,
+    id: searchRow.searchId,
     nickname: request.nickname,
     address: request.address,
     modes: request.modes,

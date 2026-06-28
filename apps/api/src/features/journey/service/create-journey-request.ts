@@ -4,5 +4,9 @@ import { insertSearch } from "../data/searches";
 
 export const createJourneyRequest = async (
   request: JourneySearchRequest,
-): Promise<{ id: string; status: "Pending" }> =>
-  withTransaction((client) => insertSearch(client, request));
+): Promise<{ id: string; status: "Pending" }> => {
+  const { searchId, status } = await withTransaction((client) =>
+    insertSearch(client, request),
+  );
+  return { id: searchId, status };
+};

@@ -12,7 +12,7 @@ import type { SearchRow } from "../features/journey/data/searches";
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
 const baseSearchRow: SearchRow = {
-  id: "search-uuid-1",
+  searchId: "search-uuid-1",
   status: "Complete",
   request: {
     address: "1 Test St, Sydney",
@@ -21,7 +21,7 @@ const baseSearchRow: SearchRow = {
     pois: [{ label: "Office", address: "2 Work St" }],
     nickname: "My Search",
   },
-  error: null,
+  statusReason: null,
   createdAt: "2024-01-01T00:00:00.000Z",
 };
 
@@ -259,7 +259,7 @@ describe("rowsToSearch", () => {
     const dbRows: DestinationDbRow[] = insertRows.map((r) => ({ ...r }));
 
     const searchRow: SearchRow = {
-      id: search.id,
+      searchId: search.id,
       status: "Complete",
       request: {
         address: search.address,
@@ -267,7 +267,7 @@ describe("rowsToSearch", () => {
         amenityCategories: search.amenityCategories,
         pois: [],
       },
-      error: null,
+      statusReason: null,
       createdAt: search.createdAt,
     };
 
@@ -335,7 +335,7 @@ describe("rowsToSearch", () => {
     const dbRows: DestinationDbRow[] = insertRows.map((r) => ({ ...r }));
 
     const searchRow: SearchRow = {
-      id: original.id,
+      searchId: original.id,
       status: "Complete",
       request: {
         address: original.address,
@@ -344,7 +344,7 @@ describe("rowsToSearch", () => {
         pois: original.pois.map((p) => ({ label: p.label, address: p.address })),
         nickname: original.nickname,
       },
-      error: null,
+      statusReason: null,
       createdAt: original.createdAt,
     };
 

@@ -18,7 +18,7 @@ describe("data layer integration", () => {
   beforeEach(truncateAll);
 
   it("insertSearch then getSearchRow round-trips the request", async () => {
-    const { id, status } = await withTransaction((client) =>
+    const { searchId: id, status } = await withTransaction((client) =>
       insertSearch(client, baseRequest),
     );
 
@@ -29,7 +29,7 @@ describe("data layer integration", () => {
     const row = await withTransaction((client) => getSearchRow(client, id));
 
     expect(row).not.toBeNull();
-    expect(row!.id).toBe(id);
+    expect(row!.searchId).toBe(id);
     expect(row!.status).toBe("Pending");
     expect(row!.request).toEqual(baseRequest);
     // createdAt should be a valid ISO string
@@ -39,7 +39,7 @@ describe("data layer integration", () => {
   });
 
   it("markProcessing flips status to Processing", async () => {
-    const { id } = await withTransaction((client) =>
+    const { searchId: id } = await withTransaction((client) =>
       insertSearch(client, baseRequest),
     );
 
@@ -50,7 +50,7 @@ describe("data layer integration", () => {
   });
 
   it("updateResult + insertDestinations + getDestinations + rowsToSearch round-trips correctly", async () => {
-    const { id } = await withTransaction((client) =>
+    const { searchId: id } = await withTransaction((client) =>
       insertSearch(client, baseRequest),
     );
     await withTransaction((client) => markProcessing(client, id));
