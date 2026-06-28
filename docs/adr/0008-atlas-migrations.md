@@ -55,6 +55,26 @@ configuration, and integrates cleanly with GitHub Actions via `ariga/setup-atlas
   connection string pointing at the Docker Compose Postgres
   (`local_cribsearch`).
 
+### Repeatable grants
+
+Atlas has no native concept of repeatable migrations, so schema-level
+permissions are enforced via a separate idempotent SQL script:
+`apps/api/db/grants.sql`.
+
+- The script is parameterised by a `universe` psql variable (defaults to
+  `production`) and derives the three per-universe role names
+  (`*_cribsearch_admin`, `*_cribsearch_rw`, `*_cribsearch_ro`) by
+  concatenation.
+- It re-issues `GRANT … ON ALL TABLES/SEQUENCES` (covering existing objects)
+  and four `ALTER DEFAULT PRIVILEGES` blocks (covering future objects created
+  by the admin role), mirroring the grants in `apps/api/db/bootstrap.sql`.
+- In CI, the `migrate` job in `.github/workflows/deploy.yml` runs it via psql
+  immediately after `atlas migrate apply`, using the same `DATABASE_URL`
+  already exported to `$GITHUB_ENV`. Currently wired for `production`.
+- The script is safe to re-run on every deploy: Postgres `GRANT` statements
+  are idempotent and `ALTER DEFAULT PRIVILEGES` silently no-ops when the
+  privilege already exists.
+
 ## Revisit if
 
 - We adopt an ORM (e.g. Prisma, Drizzle) with its own migration system at the

@@ -9,6 +9,11 @@
 --   psql "postgresql://neondb_owner:<PWD>@ep-xxxx.<region>.aws.neon.tech/neondb?sslmode=require" \
 --        -f apps/api/db/bootstrap.sql
 --
+-- ONGOING PERMISSION ENFORCEMENT:
+--   After this one-time setup, GRANTs are re-applied idempotently on every
+--   deploy via apps/api/db/grants.sql (run by psql after `atlas migrate apply`
+--   in the CI migrate job). See ADR 0008.
+--
 -- WHY THIS IS NOT AN ATLAS MIGRATION:
 --   CREATE DATABASE and CREATE ROLE are cluster-level commands that cannot run
 --   inside a transaction. Atlas versioned migrations are wrapped in a

@@ -77,6 +77,7 @@ jobs:
             migrate:
               - 'apps/api/migrations/**'
               - 'apps/api/atlas.hcl'
+              - 'apps/api/db/grants.sql'
               - '.github/workflows/deploy.yml'
             pipeline:
               - 'infrastructure/pipeline/**'
@@ -178,6 +179,13 @@ jobs:
       - name: Apply migrations
         working-directory: apps/api
         run: atlas migrate apply --env production
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply repeatable grants
+        working-directory: apps/api
+        run: psql "$DATABASE_URL" -v universe=production -v ON_ERROR_STOP=1 -f db/grants.sql
 
   deploy-api:
     runs-on: ubuntu-latest
