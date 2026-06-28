@@ -109,3 +109,23 @@ The legacy Supabase SSM parameters (`/{universe}/cribsearch/service/supabase/url
 and `supabase/service-role-key`) are **deprecated** and should be removed once
 all references are confirmed cleared. They are no longer read by any deployed
 code or CI pipeline.
+
+## Update — 2026-06-28 (Supabase chain removed)
+
+The deferred-but-retained Supabase machinery described in the 2026-06-25 (init
+deferral) note above has now been **removed** as dead code. Because
+`initSupabase()` was never wired into any entry point, `getSupabase()` always
+threw and the legacy `/properties` route would error on every call. Deleted:
+`db/supabase.ts`, `services/property-service.ts`, `routes/properties.ts`, the
+`/properties` mount in `app.ts`, and the `@supabase/supabase-js` dependency. If a
+Supabase-backed adapter is needed in future it should be reintroduced from
+scratch.
+
+Separately, SSM access was refactored for single responsibility: generic SSM
+fetching now lives in `shared/aws/ssm.ts` (`getParameter`,
+`getParametersByPath`), and Postgres config/URL/pool resolution consolidated into
+`shared/db/postgres.ts`. The old `config/ssm.ts` and `config/postgres-url.ts`
+files were deleted.
+
+The legacy Supabase SSM parameters (`/{universe}/cribsearch/service/supabase/*`)
+are now fully unused and can be deleted from Parameter Store.
