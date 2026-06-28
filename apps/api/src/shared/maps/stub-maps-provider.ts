@@ -7,8 +7,8 @@ import type {
 import type {
   DestinationTravelResult,
   MapsProvider,
-} from "../ports/maps-provider";
-import { MapsError } from "../ports/maps-provider";
+} from "./maps-provider";
+import { MapsError } from "./maps-provider";
 
 export class StubMapsProvider implements MapsProvider {
   private amenityFailure: "permanent" | "transient" | null = null;

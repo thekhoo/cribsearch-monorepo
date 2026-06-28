@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateJourneyRequest } from "../services/validate-journey-request";
+import { validateJourneyRequest } from "../features/journey/service/validate-journey-request";
 import type { JourneySearchRequest } from "@cribsearch/shared-types";
 
 const valid: JourneySearchRequest = {

@@ -1,0 +1,170 @@
+import type {
+  AmenityCategory,
+  AmenityGroup,
+  AttachedPoi,
+  Destination,
+  Search,
+  TransportMode,
+  TravelStat,
+} from "@cribsearch/shared-types";
+import type { DestinationDbRow, DestinationInsert } from "./search-destinations";
+import type { SearchRow } from "./searches";
+
+// ── Travel stat <-> column helpers ────────────────────────────────────────────
+
+interface TravelColumns {
+  walkMinutes: number | null;
+  transitMinutes: number | null;
+  cycleMinutes: number | null;
+  driveMinutes: number | null;
+}
+
+const MODE_COLUMN_MAP: ReadonlyArray<{ mode: TransportMode; key: keyof TravelColumns }> = [
+  { mode: "walk", key: "walkMinutes" },
+  { mode: "transit", key: "transitMinutes" },
+  { mode: "cycle", key: "cycleMinutes" },
+  { mode: "drive", key: "driveMinutes" },
+];
+
+export const travelStatsToColumns = (stats: TravelStat[]): TravelColumns => {
+  const result: TravelColumns = {
+    walkMinutes: null,
+    transitMinutes: null,
+    cycleMinutes: null,
+    driveMinutes: null,
+  };
+  for (const stat of stats) {
+    switch (stat.mode) {
+      case "walk":
+        result.walkMinutes = stat.minutes;
+        break;
+      case "transit":
+        result.transitMinutes = stat.minutes;
+        break;
+      case "cycle":
+        result.cycleMinutes = stat.minutes;
+        break;
+      case "drive":
+        result.driveMinutes = stat.minutes;
+        break;
+    }
+  }
+  return result;
+};
+
+export const columnsToTravelStats = (row: TravelColumns): TravelStat[] => {
+  const stats: TravelStat[] = [];
+  for (const { mode, key } of MODE_COLUMN_MAP) {
+    const minutes = row[key];
+    if (minutes !== null) {
+      stats.push({ mode, minutes });
+    }
+  }
+  return stats;
+};
+
+// ── Search → DestinationInsert[] ──────────────────────────────────────────────
+
+export const searchToDestinationRows = (search: Search): DestinationInsert[] => {
+  const rows: DestinationInsert[] = [];
+
+  for (const group of search.amenityGroups) {
+    for (const dest of group.destinations) {
+      const cols = travelStatsToColumns(dest.travelStats);
+      rows.push({
+        category: group.category,
+        name: dest.name,
+        // address column is NOT NULL + UNIQUE per search; amenity destinations
+        // from the maps provider may lack an address, so fall back to the domain id.
+        address: dest.address ?? dest.id,
+        ...cols,
+        metadata: {
+          destinationId: dest.id,
+          hadAddress: dest.address !== undefined,
+        },
+      });
+    }
+  }
+
+  for (const poi of search.pois) {
+    const cols = travelStatsToColumns(poi.travelStats);
+    rows.push({
+      category: "poi",
+      name: poi.label,
+      address: poi.address,
+      ...cols,
+      metadata: { poiId: poi.poiId },
+    });
+  }
+
+  return rows;
+};
+
+// ── (SearchRow, DestinationDbRow[]) → Search ──────────────────────────────────
+
+export const rowsToSearch = (
+  searchRow: SearchRow,
+  destRows: DestinationDbRow[],
+): Search => {
+  const request = searchRow.request;
+
+  const poiRows = destRows.filter((r) => r.category === "poi");
+  const amenityRows = destRows.filter((r) => r.category !== "poi");
+
+  // Group amenity rows by category preserving insertion order
+  const groupMap = new Map<string, DestinationDbRow[]>();
+  for (const row of amenityRows) {
+    const existing = groupMap.get(row.category);
+    if (existing) {
+      existing.push(row);
+    } else {
+      groupMap.set(row.category, [row]);
+    }
+  }
+
+  const amenityGroups: AmenityGroup[] = [];
+  for (const [category, rows] of groupMap) {
+    const destinations: Destination[] = rows.map((row) => {
+      const destinationId =
+        typeof row.metadata["destinationId"] === "string"
+          ? row.metadata["destinationId"]
+          : row.address;
+      const hadAddress =
+        typeof row.metadata["hadAddress"] === "boolean"
+          ? row.metadata["hadAddress"]
+          : true;
+      return {
+        id: destinationId,
+        name: row.name,
+        address: hadAddress ? row.address : undefined,
+        travelStats: columnsToTravelStats(row),
+      };
+    });
+    amenityGroups.push({
+      category: category as AmenityCategory,
+      destinations,
+    });
+  }
+
+  const pois: AttachedPoi[] = poiRows.map((row) => {
+    const poiId =
+      typeof row.metadata["poiId"] === "string" ? row.metadata["poiId"] : row.address;
+    return {
+      poiId,
+      label: row.name,
+      address: row.address,
+      travelStats: columnsToTravelStats(row),
+    };
+  });
+
+  return {
+    id: searchRow.id,
+    nickname: request.nickname,
+    address: request.address,
+    modes: request.modes,
+    amenityCategories: request.amenityCategories,
+    amenityGroups,
+    pois,
+    createdAt: searchRow.createdAt,
+  };
+};

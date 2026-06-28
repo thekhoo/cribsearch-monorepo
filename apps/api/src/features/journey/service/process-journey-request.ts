@@ -4,14 +4,11 @@ import type {
   Search,
 } from "@cribsearch/shared-types";
 import { logger } from "@cribsearch/logger";
-import type { JourneyRequestRepository } from "../ports/journey-request-repository";
-import type { MapsProvider } from "../ports/maps-provider";
-import { MapsError } from "../ports/maps-provider";
-
-interface Ports {
-  repo: JourneyRequestRepository;
-  maps: MapsProvider;
-}
+import { withTransaction } from "../../../shared/db/with-transaction";
+import { getSearchRow, markProcessing, updateResult } from "../data/searches";
+import { insertDestinations } from "../data/search-destinations";
+import { searchToDestinationRows } from "../data/mappers";
+import { maps, MapsError } from "../../../shared/maps";
 
 const TERMINAL_STATUSES = new Set([
   "Complete",
@@ -21,7 +18,6 @@ const TERMINAL_STATUSES = new Set([
 
 export const processJourneyRequest = async (
   msg: JourneySearchMessage,
-  { repo, maps }: Ports,
 ): Promise<void> => {
   const { journeyRequestId: id } = msg;
   const log = logger.child({
@@ -29,13 +25,13 @@ export const processJourneyRequest = async (
     journeyRequestId: id,
   });
 
-  const existing = await repo.getById(id);
+  const existing = await withTransaction((c) => getSearchRow(c, id));
   if (existing && TERMINAL_STATUSES.has(existing.status)) {
     log.info("request already terminal, skipping", { status: existing.status });
     return;
   }
 
-  await repo.markProcessing(id);
+  await withTransaction((c) => markProcessing(c, id));
   log.info("processing request");
 
   try {
@@ -73,7 +69,7 @@ export const processJourneyRequest = async (
     }
 
     const search: Search = {
-      id: `search-${id}`,
+      id,
       address: msg.address,
       nickname: msg.nickname,
       modes: msg.modes,
@@ -83,12 +79,20 @@ export const processJourneyRequest = async (
       createdAt: new Date().toISOString(),
     };
 
+    const destinationRows = searchToDestinationRows(search);
+
     if (poiErrors.length > 0) {
       const errorSummary = `${String(poiErrors.length)} destination(s) failed: ${poiErrors.join("; ")}`;
-      await repo.saveResult(id, "PartialFailure", search, errorSummary);
+      await withTransaction(async (c) => {
+        await updateResult(c, id, "PartialFailure", errorSummary);
+        await insertDestinations(c, id, destinationRows);
+      });
       log.info("request completed with PartialFailure");
     } else {
-      await repo.saveResult(id, "Complete", search);
+      await withTransaction(async (c) => {
+        await updateResult(c, id, "Complete");
+        await insertDestinations(c, id, destinationRows);
+      });
       log.info("request completed successfully");
     }
   } catch (err) {
@@ -97,7 +101,7 @@ export const processJourneyRequest = async (
         log.warn("transient error, will retry");
         throw err;
       }
-      await repo.saveResult(id, "Failed", undefined, err.message);
+      await withTransaction((c) => updateResult(c, id, "Failed", err.message));
       log.info("request failed", { reason: err.message });
       return;
     }

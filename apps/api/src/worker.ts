@@ -5,11 +5,9 @@ import type {
 } from "aws-lambda";
 import type { JourneySearchMessage } from "@cribsearch/shared-types";
 import { logger, serializeError } from "@cribsearch/logger";
-import { ports } from "./composition";
-import { processJourneyRequest } from "./services/process-journey-request";
+import { processJourneyRequest } from "./features/journey/service/process-journey-request";
 
 const log = logger.child({ component: "worker" });
-// Supabase init deferred — see ADR 0005 (repo is currently in-memory).
 
 export const handler: SQSHandler = async (event) => {
   const failures: SQSBatchItemFailure[] = [];
@@ -20,10 +18,7 @@ export const handler: SQSHandler = async (event) => {
       log.info("processing message", {
         journeyRequestId: msg.journeyRequestId,
       });
-      await processJourneyRequest(msg, {
-        repo: ports.repo,
-        maps: ports.maps,
-      });
+      await processJourneyRequest(msg);
     } catch (err) {
       log.error("failed to process record", {
         messageId: record.messageId,

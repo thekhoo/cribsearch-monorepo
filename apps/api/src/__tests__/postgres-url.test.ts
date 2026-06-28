@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildPostgresUrl } from "../config/postgres-url";
-import type { PostgresConfig } from "../config/postgres-url";
+import { buildPostgresUrl } from "../shared/config/postgres-url";
+import type { PostgresConfig } from "../shared/config/postgres-url";
 
 describe("buildPostgresUrl", () => {
   const base: PostgresConfig = {

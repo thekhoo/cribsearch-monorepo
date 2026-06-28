@@ -84,6 +84,7 @@ export const resolvePostgresConfig = async (): Promise<PostgresConfig> => {
       user: process.env.PGUSER ?? "",
       password: process.env.PGPASSWORD ?? "",
       database: process.env.PGDATABASE ?? "",
+      sslmode: process.env.PGSSLMODE ?? "disable",
     };
     return cachedPostgres;
   }

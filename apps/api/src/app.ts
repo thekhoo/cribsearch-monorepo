@@ -9,10 +9,9 @@ import { logger, serializeError, type Logger } from "@cribsearch/logger";
 import type { ApiError } from "@cribsearch/shared-types";
 import { healthRouter } from "./routes/health";
 import { propertiesRouter } from "./routes/properties";
-import { createJourneyRouter } from "./routes/journey";
-import type { Ports } from "./composition";
+import { journeyRouter } from "./features/journey/controller/journey-routes";
 
-export const createApp = (ports?: Ports): Express => {
+export const createApp = (): Express => {
   const app = express();
 
   app.use(express.json());
@@ -35,9 +34,7 @@ export const createApp = (ports?: Ports): Express => {
 
   // v1 routes
   app.use("/cribsearch/v1/health", healthRouter);
-  if (ports) {
-    app.use("/cribsearch/v1/journey", createJourneyRouter(ports));
-  }
+  app.use("/cribsearch/v1/journey", journeyRouter);
 
   // 404 fallback
   app.use((_req: Request, res: Response) => {
