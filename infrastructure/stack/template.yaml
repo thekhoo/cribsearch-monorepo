@@ -46,6 +46,7 @@ Resources:
         Variables:
           NODE_ENV: production
           JOURNEY_QUEUE_URL: !Ref JourneyQueue
+          CORS_ALLOWED_ORIGINS: "https://cribsearch.vercel.app,https://cribsearch.app"
       Policies:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName

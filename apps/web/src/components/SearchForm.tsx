@@ -1,13 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type {
-  AmenityCategory,
-  Search,
-  TransportMode,
-} from "@cribsearch/shared-types";
+import type { AmenityCategory, Search, TransportMode } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
-import { runSearch } from "../lib/mockSearch";
+import { runSearch } from "../lib/api";
 import ModeSelector from "./ModeSelector";
 import AmenityCategorySelector from "./AmenityCategorySelector";
 import PoiAttachList from "./PoiAttachList";
@@ -23,10 +19,11 @@ export default function SearchForm() {
   const [attachedPoiIds, setAttachedPoiIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Search | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const hasDestination = categories.length > 0 || attachedPoiIds.length > 0;
-  const canSubmit =
-    address.trim().length > 0 && modes.length >= 1 && hasDestination;
+  const canSubmit = address.trim().length > 0 && modes.length >= 1 && hasDestination;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,32 +31,44 @@ export default function SearchForm() {
 
     setLoading(true);
     setResult(null);
+    setError(null);
+    setWarning(null);
 
     const attachedPois = pois.filter((p) => attachedPoiIds.includes(p.id));
-    const { amenityGroups, pois: computedPois } = await runSearch({
-      address: address.trim(),
-      modes,
-      amenityCategories: categories,
-      attachedPois,
-    });
 
-    const search: Search = {
-      id: crypto.randomUUID(),
-      address: address.trim(),
-      modes,
-      amenityCategories: categories,
-      amenityGroups,
-      pois: computedPois,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const { search: serverSearch, partialFailure } = await runSearch({
+        address: address.trim(),
+        modes,
+        amenityCategories: categories,
+        attachedPois,
+      });
 
-    addSearch(search);
-    setResult(search);
-    setLoading(false);
+      // Merge: use the server's id, createdAt, amenityGroups and pois, but
+      // guarantee the request-derived fields (address, modes, amenityCategories)
+      // are always present in case the server omits them.
+      const search: Search = {
+        ...serverSearch,
+        address: address.trim(),
+        modes,
+        amenityCategories: categories,
+      };
+
+      addSearch(search);
+      setResult(search);
+      setWarning(partialFailure ?? null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleNewSearch() {
     setResult(null);
+    setError(null);
+    setWarning(null);
     setAddress("");
     setModes(["walk"]);
     setCategories([]);
@@ -76,7 +85,8 @@ export default function SearchForm() {
               {result.modes.length} mode{result.modes.length !== 1 && "s"} ·{" "}
               {result.amenityCategories.length} categor
               {result.amenityCategories.length === 1 ? "y" : "ies"}
-              {result.pois.length > 0 && ` · ${result.pois.length} POI${result.pois.length !== 1 ? "s" : ""}`}
+              {result.pois.length > 0 &&
+                ` · ${result.pois.length} POI${result.pois.length !== 1 ? "s" : ""}`}
             </p>
           </div>
           <button
@@ -86,6 +96,7 @@ export default function SearchForm() {
             New Search
           </button>
         </div>
+        {warning && <p className="text-sm text-amber-600">{warning}</p>}
         <ResultsView search={result} />
       </div>
     );
@@ -94,10 +105,7 @@ export default function SearchForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label
-          htmlFor="address"
-          className="mb-1 block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="address" className="mb-1 block text-sm font-medium text-gray-700">
           Candidate Address
         </label>
         <input
@@ -115,6 +123,8 @@ export default function SearchForm() {
       <PoiAttachList attachedIds={attachedPoiIds} onChange={setAttachedPoiIds} />
 
       {loading && <Spinner />}
+
+      {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
       {!loading && (
         <button
