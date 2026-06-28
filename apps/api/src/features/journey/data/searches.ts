@@ -2,27 +2,27 @@ import type { PoolClient } from "pg";
 import type { JourneySearchRequest, RequestStatus } from "@cribsearch/shared-types";
 
 export interface SearchRow {
-  id: string;
+  searchId: string;
   status: RequestStatus;
   request: JourneySearchRequest;
-  error: string | null;
+  statusReason: string | null;
   createdAt: string;
 }
 
-/** Insert a new search row with status='Pending'. Returns id and status. */
+/** Insert a new search row with status='Pending'. Returns searchId and status. */
 export const insertSearch = async (
   client: PoolClient,
   request: JourneySearchRequest,
-): Promise<{ id: string; status: "Pending" }> => {
-  const { rows } = await client.query<{ id: string }>(
-    `INSERT INTO searches (status, request) VALUES ('Pending', $1) RETURNING id`,
+): Promise<{ searchId: string; status: "Pending" }> => {
+  const { rows } = await client.query<{ search_id: string }>(
+    `INSERT INTO searches (status, request) VALUES ('Pending', $1) RETURNING search_id`,
     [JSON.stringify(request)],
   );
   const row = rows[0];
   if (!row) {
     throw new Error("insertSearch: no row returned from INSERT");
   }
-  return { id: row.id, status: "Pending" };
+  return { searchId: row.search_id, status: "Pending" };
 };
 
 /** Transition a search to Processing. */
@@ -31,47 +31,47 @@ export const markProcessing = async (
   id: string,
 ): Promise<void> => {
   await client.query(
-    `UPDATE searches SET status='Processing', updated_at=now() WHERE id=$1`,
+    `UPDATE searches SET status='Processing', updated_at=now() WHERE search_id=$1`,
     [id],
   );
 };
 
-/** Set the terminal status (Complete, PartialFailure, Failed) and optional error. */
+/** Set the terminal status (Complete, PartialFailure, Failed) and optional statusReason. */
 export const updateResult = async (
   client: PoolClient,
   id: string,
   status: "Complete" | "PartialFailure" | "Failed",
-  error?: string,
+  statusReason?: string,
 ): Promise<void> => {
   await client.query(
-    `UPDATE searches SET status=$2, error=$3, updated_at=now() WHERE id=$1`,
-    [id, status, error ?? null],
+    `UPDATE searches SET status=$2, status_reason=$3, updated_at=now() WHERE search_id=$1`,
+    [id, status, statusReason ?? null],
   );
 };
 
-/** Fetch a single search row by id. Returns null for unknown or non-uuid ids. */
+/** Fetch a single search row by search_id. Returns null for unknown or non-uuid ids. */
 export const getSearchRow = async (
   client: PoolClient,
   id: string,
 ): Promise<SearchRow | null> => {
   try {
     const { rows } = await client.query<{
-      id: string;
+      search_id: string;
       status: RequestStatus;
       request: JourneySearchRequest;
-      error: string | null;
+      status_reason: string | null;
       created_at: Date;
     }>(
-      `SELECT id, status, request, error, created_at FROM searches WHERE id=$1`,
+      `SELECT search_id, status, request, status_reason, created_at FROM searches WHERE search_id=$1`,
       [id],
     );
     const row = rows[0];
     if (!row) return null;
     return {
-      id: row.id,
+      searchId: row.search_id,
       status: row.status,
       request: row.request,
-      error: row.error,
+      statusReason: row.status_reason,
       createdAt: row.created_at.toISOString(),
     };
   } catch (err: unknown) {

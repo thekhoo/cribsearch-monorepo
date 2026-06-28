@@ -76,6 +76,14 @@ Run `apps/api/db/bootstrap.sql` once as the Neon default/owner role
 (admin / rw / ro). **Replace every `CHANGE_ME_*` placeholder password** in the
 script with real secrets before executing.
 
+### Repeatable grants
+
+`apps/api/db/grants.sql` re-applies all schema-level `GRANT` and
+`ALTER DEFAULT PRIVILEGES` statements on every deploy (idempotent, safe to
+re-run). It is parameterised by `universe` (defaults to `production`) and is
+executed automatically by the `migrate` CI job via psql after
+`atlas migrate apply`. See [ADR 0008](docs/adr/0008-atlas-migrations.md#repeatable-grants).
+
 ### Local development
 
 `docker compose up -d` starts two Postgres containers and a one-shot migration

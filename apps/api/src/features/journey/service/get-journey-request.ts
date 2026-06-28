@@ -21,9 +21,9 @@ export const getJourneyRequest = async (
     const hasResult =
       row.status === "Complete" || row.status === "PartialFailure";
     return {
-      id: row.id,
+      id: row.searchId,
       status: row.status,
       search: hasResult ? rowsToSearch(row, destinations) : undefined,
-      error: row.error ?? undefined,
+      error: row.statusReason ?? undefined,
     };
   });
