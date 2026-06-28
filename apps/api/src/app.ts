@@ -1,12 +1,9 @@
-import express, {
-  type Express,
-  type NextFunction,
-  type Request,
-  type Response,
-} from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
+import cors from "cors";
 import { randomUUID } from "node:crypto";
 import { logger, serializeError, type Logger } from "@cribsearch/logger";
 import type { ApiError } from "@cribsearch/shared-types";
+import { env } from "./shared/config/env";
 import { healthRouter } from "./routes/health";
 import { journeyRouter } from "./features/journey/controller/journey-routes";
 
@@ -15,12 +12,19 @@ export const createApp = (): Express => {
 
   app.use(express.json());
 
+  app.use(
+    cors({
+      origin: env.corsAllowedOrigins,
+      methods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "x-request-id"],
+      exposedHeaders: ["x-request-id"],
+    }),
+  );
+
   // Attach a request-scoped logger with a correlation id.
   app.use((req, res, next) => {
-    const headerId =
-      req.headers["x-request-id"] ?? req.headers["x-amzn-trace-id"];
-    const requestId =
-      (Array.isArray(headerId) ? headerId[0] : headerId) ?? randomUUID();
+    const headerId = req.headers["x-request-id"] ?? req.headers["x-amzn-trace-id"];
+    const requestId = (Array.isArray(headerId) ? headerId[0] : headerId) ?? randomUUID();
     req.id = requestId;
     req.log = logger.child({ component: "http", requestId });
     res.setHeader("x-request-id", requestId);
