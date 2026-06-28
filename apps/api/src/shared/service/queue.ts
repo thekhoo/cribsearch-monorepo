@@ -1,11 +1,11 @@
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { JourneySearchMessage } from "@cribsearch/shared-types";
 import { logger } from "@cribsearch/logger";
 import { env } from "../config/env";
+import { sendMessage } from "../aws/sqs";
 
 const log = logger.child({ component: "sqs-queue" });
-let client: SQSClient | null = null;
 
+/** Enqueues a journey search message onto the SQS journey queue. */
 export const enqueueJourney = async (msg: JourneySearchMessage): Promise<void> => {
   if (!env.journeyQueueUrl) {
     log.warn("JOURNEY_QUEUE_URL not set; skipping enqueue", {
@@ -13,12 +13,6 @@ export const enqueueJourney = async (msg: JourneySearchMessage): Promise<void> =
     });
     return;
   }
-  client ??= new SQSClient({});
-  await client.send(
-    new SendMessageCommand({
-      QueueUrl: env.journeyQueueUrl,
-      MessageBody: JSON.stringify(msg),
-    }),
-  );
+  await sendMessage(env.journeyQueueUrl, JSON.stringify(msg));
   log.info("enqueued request", { journeyRequestId: msg.journeyRequestId });
 };

@@ -1,4 +1,4 @@
-import { getPool } from "../../shared/db/pool";
+import { getPool } from "../../shared/db/postgres";
 
 export const truncateAll = async (): Promise<void> => {
   const pool = await getPool();

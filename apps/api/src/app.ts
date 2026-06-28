@@ -8,7 +8,6 @@ import { randomUUID } from "node:crypto";
 import { logger, serializeError, type Logger } from "@cribsearch/logger";
 import type { ApiError } from "@cribsearch/shared-types";
 import { healthRouter } from "./routes/health";
-import { propertiesRouter } from "./routes/properties";
 import { journeyRouter } from "./features/journey/controller/journey-routes";
 
 export const createApp = (): Express => {
@@ -30,7 +29,6 @@ export const createApp = (): Express => {
 
   // Legacy routes
   app.use("/health", healthRouter);
-  app.use("/properties", propertiesRouter);
 
   // v1 routes
   app.use("/cribsearch/v1/health", healthRouter);
