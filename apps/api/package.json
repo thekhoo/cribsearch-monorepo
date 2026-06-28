@@ -24,7 +24,8 @@
     "@cribsearch/shared-types": "workspace:*",
     "express": "^4.21.2",
     "pg": "^8.22.0",
-    "serverless-http": "^3.2.0"
+    "serverless-http": "^3.2.0",
+    "uuidv7": "^1.2.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",

@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import type { JourneySearchRequest, RequestStatus } from "@cribsearch/shared-types";
+import { uuidv7 } from "uuidv7";
 
 export interface SearchRow {
   searchId: string;
@@ -14,9 +15,10 @@ export const insertSearch = async (
   client: PoolClient,
   request: JourneySearchRequest,
 ): Promise<{ searchId: string; status: "Pending" }> => {
+  const searchId = uuidv7();
   const { rows } = await client.query<{ search_id: string }>(
-    `INSERT INTO searches (status, request) VALUES ('Pending', $1) RETURNING search_id`,
-    [JSON.stringify(request)],
+    `INSERT INTO searches (search_id, status, request) VALUES ($1, 'Pending', $2) RETURNING search_id`,
+    [searchId, JSON.stringify(request)],
   );
   const row = rows[0];
   if (!row) {
@@ -31,7 +33,7 @@ export const markProcessing = async (
   id: string,
 ): Promise<void> => {
   await client.query(
-    `UPDATE searches SET status='Processing', updated_at=now() WHERE search_id=$1`,
+    `UPDATE searches SET status='Processing', last_updated_at_utc = (now() AT TIME ZONE 'UTC') WHERE search_id=$1`,
     [id],
   );
 };
@@ -44,7 +46,7 @@ export const updateResult = async (
   statusReason?: string,
 ): Promise<void> => {
   await client.query(
-    `UPDATE searches SET status=$2, status_reason=$3, updated_at=now() WHERE search_id=$1`,
+    `UPDATE searches SET status=$2, status_reason=$3, last_updated_at_utc = (now() AT TIME ZONE 'UTC') WHERE search_id=$1`,
     [id, status, statusReason ?? null],
   );
 };
@@ -60,9 +62,9 @@ export const getSearchRow = async (
       status: RequestStatus;
       request: JourneySearchRequest;
       status_reason: string | null;
-      created_at: Date;
+      created_at_utc: Date;
     }>(
-      `SELECT search_id, status, request, status_reason, created_at FROM searches WHERE search_id=$1`,
+      `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1`,
       [id],
     );
     const row = rows[0];
@@ -72,7 +74,7 @@ export const getSearchRow = async (
       status: row.status,
       request: row.request,
       statusReason: row.status_reason,
-      createdAt: row.created_at.toISOString(),
+      createdAt: row.created_at_utc.toISOString(),
     };
   } catch (err: unknown) {
     // Postgres error code 22P02 = invalid_text_representation (e.g. non-uuid id)
