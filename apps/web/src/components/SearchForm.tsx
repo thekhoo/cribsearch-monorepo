@@ -20,6 +20,7 @@ export default function SearchForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Search | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const hasDestination = categories.length > 0 || attachedPoiIds.length > 0;
   const canSubmit = address.trim().length > 0 && modes.length >= 1 && hasDestination;
@@ -31,11 +32,12 @@ export default function SearchForm() {
     setLoading(true);
     setResult(null);
     setError(null);
+    setWarning(null);
 
     const attachedPois = pois.filter((p) => attachedPoiIds.includes(p.id));
 
     try {
-      const serverSearch = await runSearch({
+      const { search: serverSearch, partialFailure } = await runSearch({
         address: address.trim(),
         modes,
         amenityCategories: categories,
@@ -54,6 +56,7 @@ export default function SearchForm() {
 
       addSearch(search);
       setResult(search);
+      setWarning(partialFailure ?? null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred";
       setError(message);
@@ -65,6 +68,7 @@ export default function SearchForm() {
   function handleNewSearch() {
     setResult(null);
     setError(null);
+    setWarning(null);
     setAddress("");
     setModes(["walk"]);
     setCategories([]);
@@ -92,6 +96,7 @@ export default function SearchForm() {
             New Search
           </button>
         </div>
+        {warning && <p className="text-sm text-amber-600">{warning}</p>}
         <ResultsView search={result} />
       </div>
     );
