@@ -4,7 +4,9 @@
  */
 
 /** Base URL for the Cribsearch API. Trailing slash is stripped for clean URL joins. */
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(
+const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+export const API_BASE_URL = (raw && raw.length > 0 ? raw : "http://localhost:3001").replace(
   /\/$/,
   "",
 );
