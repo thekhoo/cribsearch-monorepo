@@ -36,6 +36,7 @@ export class StubMapsProvider implements MapsProvider {
   async findAmenities(
     _address: string,
     categories: AmenityCategory[],
+    modes: TransportMode[],
   ): Promise<AmenityGroup[]> {
     if (this.amenityFailure === "permanent") {
       throw new MapsError("address not found", "permanent");
@@ -50,7 +51,7 @@ export class StubMapsProvider implements MapsProvider {
         {
           id: `${category}-1`,
           name: `Stub ${category}`,
-          travelStats: [],
+          travelStats: modes.map((mode) => ({ mode, minutes: 10 })),
         },
       ],
     }));
