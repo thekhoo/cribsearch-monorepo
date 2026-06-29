@@ -221,7 +221,25 @@ These prerequisites live outside the repo and must exist before the pipeline wor
    `/{universe}/cribsearch/service/postgres/*` (see step 6 below).
 
 4. **`NEXT_PUBLIC_API_URL`** in Vercel → set to the API Gateway base URL output by the
-   first API deploy (stack output `ApiBaseUrl`).
+   first API deploy (stack output `ApiBaseUrl`), for the **Production** (and **Preview**)
+   environment, with no trailing slash. **It must be a _Non-sensitive_ variable.** The
+   `deploy-ui` action uses Vercel's prebuilt flow (`vercel pull` → `vercel build` →
+   `vercel deploy --prebuilt`), so `next build` runs on the CI runner and only sees
+   values that `vercel pull` writes locally. `vercel pull` cannot decrypt _Sensitive_
+   variables, so a Sensitive value pulls as empty → Next inlines `""` → the client ships
+   the `http://localhost:3001` fallback in `apps/web/src/lib/config.ts`. Note `vercel env
+   add` may default to Sensitive — force it off:
+
+   ```bash
+   vercel env add NEXT_PUBLIC_API_URL production --no-sensitive --value "<ApiBaseUrl>" --yes
+   # verify the real URL (not "") comes back:
+   vercel pull --yes --environment=production && grep NEXT_PUBLIC_API_URL .vercel/.env.production.local
+   ```
+
+   (`NEXT_PUBLIC_*` vars are inlined into the public client bundle at build time, so
+   there is no benefit to marking this one Sensitive anyway.) Because Root Directory is
+   `apps/web`, `vercel build` runs `next build` directly — `turbo.json`'s strict-env
+   settings do **not** affect this deploy path.
 5. **Database bootstrap:** run `apps/api/db/bootstrap.sql` once as the Neon
    default/owner role (`neondb_owner`) on the Neon host
    (`ep-xxxx.<region>.aws.neon.tech`; use the `-pooler` variant for app/Lambda
