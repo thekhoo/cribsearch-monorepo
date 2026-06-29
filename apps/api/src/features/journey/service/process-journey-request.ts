@@ -8,7 +8,7 @@ import { withTransaction } from "../../../shared/db/with-transaction";
 import { getSearchRow, markProcessing, updateResult } from "../data/searches";
 import { insertDestinations } from "../data/search-destinations";
 import { searchToDestinationRows } from "../data/mappers";
-import { maps, MapsError } from "../../../shared/maps";
+import { getMaps, MapsError } from "../../../shared/maps";
 
 const TERMINAL_STATUSES = new Set([
   "Complete",
@@ -35,9 +35,12 @@ export const processJourneyRequest = async (
   log.info("processing request");
 
   try {
-    const amenityGroups = await maps.findAmenities(
+    const provider = await getMaps();
+
+    const amenityGroups = await provider.findAmenities(
       msg.address,
       msg.amenityCategories,
+      msg.modes,
     );
 
     const attachedPois: AttachedPoi[] = [];
@@ -45,7 +48,7 @@ export const processJourneyRequest = async (
 
     for (const poi of msg.pois) {
       try {
-        const [result] = await maps.computeTravelStats(
+        const [result] = await provider.computeTravelStats(
           msg.address,
           [poi],
           msg.modes,
