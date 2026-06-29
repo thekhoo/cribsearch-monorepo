@@ -43,6 +43,8 @@ async function extractErrorMessage(response: Response): Promise<string> {
 async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timerId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  console.log(`Env var is: ${process.env.NEXT_PUBLIC_API_URL}`)
+  console.log(`Fetching ${url} with timeout of ${REQUEST_TIMEOUT_MS}ms`);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (err) {
