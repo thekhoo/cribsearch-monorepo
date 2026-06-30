@@ -148,6 +148,10 @@ pnpm dev                      # runs web + api together (Turborepo)
 | `GET` | `/cribsearch/v1/health` | Health check |
 | `POST` | `/cribsearch/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
 | `GET` | `/cribsearch/v1/journey/:id` | Poll for Journey Search Response |
+| `GET` | `/cribsearch/v1/pois` | List the current user's POIs |
+| `POST` | `/cribsearch/v1/pois` | Add a POI (geocodes the address) |
+| `PUT` | `/cribsearch/v1/pois/{poiId}` | Edit a POI (re-geocodes if the address changed) |
+| `DELETE` | `/cribsearch/v1/pois/{poiId}` | Delete a POI |
 
 > **Note:** The deployed `GET /journey/:id` round-trip does not yet reflect worker
 > updates because the repository is an in-memory dummy (each Lambda has its own
