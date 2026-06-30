@@ -1,6 +1,16 @@
 import type { TransportMode } from "@cribsearch/shared-types";
 import { MapsError } from "../maps-provider";
 import { classifyGoogleStatus, toDirectionsMode } from "./mappers";
+import type {
+  DirectionsResult,
+  GeoCoordinate,
+  GMapsDirectionsResponse,
+  GMapsErrorResponse,
+  GMapsGeocodeResponse,
+  GMapsPlacesNearbyRequest,
+  GMapsPlacesNearbyResponse,
+  NearbyPlace,
+} from "./types";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -27,35 +37,54 @@ export class GoogleMapsClient {
     return AbortSignal.timeout(this.timeoutMs);
   }
 
-  private async fetchWithTimeout(
-    input: string,
-    init?: RequestInit,
-  ): Promise<Response> {
+  /**
+   * Fetches `input` and parses the JSON response as `T`. Centralises the
+   * transport-level error handling shared by every endpoint: network/timeout
+   * failures and non-2xx responses become `MapsError`s (5xx/429 transient,
+   * other 4xx permanent), extracting the Places API error status when present.
+   */
+  private async fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
+    let res: Response;
     try {
-      return await this.fetchFn(input, {
-        ...init,
-        signal: this.abortSignal(),
-      });
+      res = await this.fetchFn(input, { ...init, signal: this.abortSignal() });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new MapsError(message, "transient");
     }
-  }
-
-  async geocode(address: string): Promise<{ lat: number; lng: number }> {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${encodeURIComponent(this.token)}`;
-    const res = await this.fetchWithTimeout(url);
 
     if (!res.ok) {
-      const kind = res.status >= 500 || res.status === 429 ? "transient" : "permanent";
-      throw new MapsError(`HTTP ${String(res.status)}`, kind);
+      const kind =
+        res.status >= 500 || res.status === 429 ? "transient" : "permanent";
+      let message = `HTTP ${String(res.status)}`;
+      try {
+        const errBody = (await res.json()) as GMapsErrorResponse;
+        if (errBody.error?.status) {
+          message = errBody.error.status;
+        }
+      } catch {
+        // No/!JSON error body — keep the HTTP status message.
+      }
+      throw new MapsError(message, kind);
     }
 
-    const body = (await res.json()) as { status: string; results: Array<{ geometry: { location: { lat: number; lng: number } } }> };
+    return (await res.json()) as T;
+  }
 
-    if (body.status !== "OK") {
-      throw new MapsError(body.status, classifyGoogleStatus(body.status));
+  /**
+   * The legacy web-service APIs (Geocoding, Directions) return HTTP 200 with a
+   * top-level `status` field; anything other than "OK" is a logical error.
+   */
+  private assertLegacyOk(status: string): void {
+    if (status !== "OK") {
+      throw new MapsError(status, classifyGoogleStatus(status));
     }
+  }
+
+  async geocode(address: string): Promise<GeoCoordinate> {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${encodeURIComponent(this.token)}`;
+    const body = await this.fetchJson<GMapsGeocodeResponse>(url);
+
+    this.assertLegacyOk(body.status);
 
     const location = body.results[0]?.geometry.location;
     if (!location) {
@@ -69,7 +98,7 @@ export class GoogleMapsClient {
     origin: string;
     destination: string;
     mode: TransportMode;
-  }): Promise<{ seconds: number; meters: number }> {
+  }): Promise<DirectionsResult> {
     const url =
       `https://maps.googleapis.com/maps/api/directions/json` +
       `?origin=${encodeURIComponent(args.origin)}` +
@@ -77,26 +106,9 @@ export class GoogleMapsClient {
       `&mode=${toDirectionsMode(args.mode)}` +
       `&key=${encodeURIComponent(this.token)}`;
 
-    const res = await this.fetchWithTimeout(url);
+    const body = await this.fetchJson<GMapsDirectionsResponse>(url);
 
-    if (!res.ok) {
-      const kind = res.status >= 500 || res.status === 429 ? "transient" : "permanent";
-      throw new MapsError(`HTTP ${String(res.status)}`, kind);
-    }
-
-    const body = (await res.json()) as {
-      status: string;
-      routes: Array<{
-        legs: Array<{
-          duration: { value: number };
-          distance: { value: number };
-        }>;
-      }>;
-    };
-
-    if (body.status !== "OK") {
-      throw new MapsError(body.status, classifyGoogleStatus(body.status));
-    }
+    this.assertLegacyOk(body.status);
 
     const leg = body.routes[0]?.legs[0];
     if (leg === undefined) {
@@ -112,10 +124,10 @@ export class GoogleMapsClient {
     includedType: string;
     maxResults?: number;
     radiusMeters?: number;
-  }): Promise<Array<{ id: string; name: string; address: string }>> {
+  }): Promise<NearbyPlace[]> {
     const url = "https://places.googleapis.com/v1/places:searchNearby";
 
-    const body = {
+    const requestBody: GMapsPlacesNearbyRequest = {
       includedTypes: [args.includedType],
       maxResultCount: args.maxResults ?? 5,
       locationRestriction: {
@@ -126,7 +138,7 @@ export class GoogleMapsClient {
       },
     };
 
-    const res = await this.fetchWithTimeout(url, {
+    const body = await this.fetchJson<GMapsPlacesNearbyResponse>(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -135,35 +147,10 @@ export class GoogleMapsClient {
         "X-Goog-FieldMask":
           "places.id,places.displayName,places.formattedAddress,places.location",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
-    if (!res.ok) {
-      const kind = res.status >= 500 || res.status === 429 ? "transient" : "permanent";
-      // Places New returns a JSON error body — try to extract the status message
-      let errorMsg = `HTTP ${String(res.status)}`;
-      try {
-        const errBody = (await res.json()) as {
-          error?: { status?: string; message?: string };
-        };
-        if (errBody.error?.status) {
-          errorMsg = errBody.error.status;
-        }
-      } catch {
-        // ignore JSON parse failure; use the HTTP status message
-      }
-      throw new MapsError(errorMsg, kind);
-    }
-
-    const responseBody = (await res.json()) as {
-      places?: Array<{
-        id: string;
-        displayName?: { text?: string };
-        formattedAddress?: string;
-      }>;
-    };
-
-    const places = responseBody.places ?? [];
+    const places = body.places ?? [];
 
     return places.map((place) => ({
       id: place.id,
