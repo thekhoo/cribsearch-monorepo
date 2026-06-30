@@ -89,7 +89,7 @@ Resources:
           NODE_ENV: production
       Policies:
         - SQSPollerPolicy:
-            QueueName: !GetAtt TaskQueue.QueueName
+            QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
             ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
