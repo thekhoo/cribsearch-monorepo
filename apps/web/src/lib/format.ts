@@ -14,7 +14,15 @@ export const CATEGORY_META: Record<AmenityCategory, { label: string }> = {
   park: { label: "Parks" },
 };
 
-export function formatMinutes(minutes: number): string {
+/** Formats a travel duration given in seconds, e.g. "5 min", "<1 min". */
+export function formatDuration(seconds: number): string {
+  const minutes = seconds / 60;
   if (minutes < 1) return "<1 min";
   return `${Math.round(minutes)} min`;
+}
+
+/** Formats a travel distance given in meters, e.g. "800 m", "1.2 km". */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
 }

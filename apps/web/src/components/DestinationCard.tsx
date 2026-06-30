@@ -1,5 +1,5 @@
 import type { TravelStat } from "@cribsearch/shared-types";
-import { MODE_META, formatMinutes } from "../lib/format";
+import { MODE_META, formatDuration, formatDistance } from "../lib/format";
 
 interface DestinationCardProps {
   name: string;
@@ -28,7 +28,7 @@ export default function DestinationCard({
             title={MODE_META[stat.mode].label}
           >
             <span>{MODE_META[stat.mode].icon}</span>
-            <span>{formatMinutes(stat.minutes)}</span>
+            <span>{formatDuration(stat.seconds)} · <span className="text-gray-400">{formatDistance(stat.meters)}</span></span>
           </span>
         ))}
       </div>
