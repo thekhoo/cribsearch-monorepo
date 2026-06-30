@@ -15,7 +15,10 @@ export type AmenityCategory =
 
 export interface TravelStat {
   mode: TransportMode;
-  minutes: number;
+  /** Travel duration in seconds. */
+  seconds: number;
+  /** Travel distance in meters. */
+  meters: number;
 }
 
 export interface Destination {

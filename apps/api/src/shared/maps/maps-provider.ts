@@ -16,6 +16,7 @@ export interface MapsProvider {
   findAmenities(
     address: string,
     categories: AmenityCategory[],
+    modes: TransportMode[],
   ): Promise<AmenityGroup[]>;
 
   computeTravelStats(

@@ -30,35 +30,47 @@ const baseSearchRow: SearchRow = {
 describe("travelStatsToColumns", () => {
   it("maps each mode to its column", () => {
     const result = travelStatsToColumns([
-      { mode: "walk", minutes: 5 },
-      { mode: "transit", minutes: 12 },
-      { mode: "cycle", minutes: 8 },
-      { mode: "drive", minutes: 3 },
+      { mode: "walk", seconds: 300, meters: 500 },
+      { mode: "transit", seconds: 720, meters: 1200 },
+      { mode: "cycle", seconds: 480, meters: 800 },
+      { mode: "drive", seconds: 180, meters: 300 },
     ]);
     expect(result).toEqual({
-      walkMinutes: 5,
-      transitMinutes: 12,
-      cycleMinutes: 8,
-      driveMinutes: 3,
+      walkSeconds: 300,
+      walkMeters: 500,
+      transitSeconds: 720,
+      transitMeters: 1200,
+      cycleSeconds: 480,
+      cycleMeters: 800,
+      driveSeconds: 180,
+      driveMeters: 300,
     });
   });
 
   it("leaves absent modes as null", () => {
-    const result = travelStatsToColumns([{ mode: "walk", minutes: 10 }]);
+    const result = travelStatsToColumns([{ mode: "walk", seconds: 600, meters: 1000 }]);
     expect(result).toEqual({
-      walkMinutes: 10,
-      transitMinutes: null,
-      cycleMinutes: null,
-      driveMinutes: null,
+      walkSeconds: 600,
+      walkMeters: 1000,
+      transitSeconds: null,
+      transitMeters: null,
+      cycleSeconds: null,
+      cycleMeters: null,
+      driveSeconds: null,
+      driveMeters: null,
     });
   });
 
   it("returns all nulls for empty stats", () => {
     expect(travelStatsToColumns([])).toEqual({
-      walkMinutes: null,
-      transitMinutes: null,
-      cycleMinutes: null,
-      driveMinutes: null,
+      walkSeconds: null,
+      walkMeters: null,
+      transitSeconds: null,
+      transitMeters: null,
+      cycleSeconds: null,
+      cycleMeters: null,
+      driveSeconds: null,
+      driveMeters: null,
     });
   });
 });
@@ -68,23 +80,45 @@ describe("travelStatsToColumns", () => {
 describe("columnsToTravelStats", () => {
   it("produces stats only for non-null columns in fixed order", () => {
     const stats = columnsToTravelStats({
-      walkMinutes: 5,
-      transitMinutes: null,
-      cycleMinutes: 8,
-      driveMinutes: null,
+      walkSeconds: 300,
+      walkMeters: 500,
+      transitSeconds: null,
+      transitMeters: null,
+      cycleSeconds: 480,
+      cycleMeters: 800,
+      driveSeconds: null,
+      driveMeters: null,
     });
     expect(stats).toEqual([
-      { mode: "walk", minutes: 5 },
-      { mode: "cycle", minutes: 8 },
+      { mode: "walk", seconds: 300, meters: 500 },
+      { mode: "cycle", seconds: 480, meters: 800 },
     ]);
+  });
+
+  it("coalesces null meters to 0 when seconds is present", () => {
+    const stats = columnsToTravelStats({
+      walkSeconds: 300,
+      walkMeters: null,
+      transitSeconds: null,
+      transitMeters: null,
+      cycleSeconds: null,
+      cycleMeters: null,
+      driveSeconds: null,
+      driveMeters: null,
+    });
+    expect(stats).toEqual([{ mode: "walk", seconds: 300, meters: 0 }]);
   });
 
   it("returns empty array when all columns are null", () => {
     const stats = columnsToTravelStats({
-      walkMinutes: null,
-      transitMinutes: null,
-      cycleMinutes: null,
-      driveMinutes: null,
+      walkSeconds: null,
+      walkMeters: null,
+      transitSeconds: null,
+      transitMeters: null,
+      cycleSeconds: null,
+      cycleMeters: null,
+      driveSeconds: null,
+      driveMeters: null,
     });
     expect(stats).toEqual([]);
   });
@@ -122,10 +156,14 @@ describe("searchToDestinationRows", () => {
     expect(row.category).toBe("supermarket");
     expect(row.name).toBe("Coles");
     expect(row.address).toBe("supermarket-1"); // fell back to id
-    expect(row.walkMinutes).toBeNull();
-    expect(row.transitMinutes).toBeNull();
-    expect(row.cycleMinutes).toBeNull();
-    expect(row.driveMinutes).toBeNull();
+    expect(row.walkSeconds).toBeNull();
+    expect(row.walkMeters).toBeNull();
+    expect(row.transitSeconds).toBeNull();
+    expect(row.transitMeters).toBeNull();
+    expect(row.cycleSeconds).toBeNull();
+    expect(row.cycleMeters).toBeNull();
+    expect(row.driveSeconds).toBeNull();
+    expect(row.driveMeters).toBeNull();
     expect(row.metadata).toEqual({ destinationId: "supermarket-1", hadAddress: false });
   });
 
@@ -143,7 +181,7 @@ describe("searchToDestinationRows", () => {
               id: "supermarket-1",
               name: "Coles",
               address: "10 Supermarket Ave",
-              travelStats: [{ mode: "walk", minutes: 7 }],
+              travelStats: [{ mode: "walk", seconds: 420, meters: 700 }],
             },
           ],
         },
@@ -156,7 +194,8 @@ describe("searchToDestinationRows", () => {
     expect(rows).toHaveLength(1);
     const row = rows[0]!;
     expect(row.address).toBe("10 Supermarket Ave");
-    expect(row.walkMinutes).toBe(7);
+    expect(row.walkSeconds).toBe(420);
+    expect(row.walkMeters).toBe(700);
     expect(row.metadata).toEqual({ destinationId: "supermarket-1", hadAddress: true });
   });
 
@@ -172,7 +211,7 @@ describe("searchToDestinationRows", () => {
           poiId: "poi-42",
           label: "Office",
           address: "2 Work St",
-          travelStats: [{ mode: "walk", minutes: 15 }],
+          travelStats: [{ mode: "walk", seconds: 900, meters: 1500 }],
         },
       ],
       createdAt: "2024-01-01T00:00:00.000Z",
@@ -184,7 +223,8 @@ describe("searchToDestinationRows", () => {
     expect(row.category).toBe("poi");
     expect(row.name).toBe("Office");
     expect(row.address).toBe("2 Work St");
-    expect(row.walkMinutes).toBe(15);
+    expect(row.walkSeconds).toBe(900);
+    expect(row.walkMeters).toBe(1500);
     expect(row.metadata).toEqual({ poiId: "poi-42" });
   });
 
@@ -211,10 +251,14 @@ describe("rowsToSearch", () => {
         category: "supermarket",
         name: "Coles",
         address: "supermarket-1", // stored id as fallback
-        walkMinutes: null,
-        transitMinutes: null,
-        cycleMinutes: null,
-        driveMinutes: null,
+        walkSeconds: null,
+        walkMeters: null,
+        transitSeconds: null,
+        transitMeters: null,
+        cycleSeconds: null,
+        cycleMeters: null,
+        driveSeconds: null,
+        driveMeters: null,
         metadata: { destinationId: "supermarket-1", hadAddress: false },
       },
     ];
@@ -245,7 +289,7 @@ describe("rowsToSearch", () => {
               id: "supermarket-1",
               name: "Coles",
               address: "10 Supermarket Ave",
-              travelStats: [{ mode: "walk", minutes: 7 }],
+              travelStats: [{ mode: "walk", seconds: 420, meters: 700 }],
             },
           ],
         },
@@ -274,7 +318,7 @@ describe("rowsToSearch", () => {
     const result = rowsToSearch(searchRow, dbRows);
     const dest = result.amenityGroups[0]?.destinations[0];
     expect(dest?.address).toBe("10 Supermarket Ave");
-    expect(dest?.travelStats).toEqual([{ mode: "walk", minutes: 7 }]);
+    expect(dest?.travelStats).toEqual([{ mode: "walk", seconds: 420, meters: 700 }]);
   });
 
   it("reconstructs a POI correctly", () => {
@@ -283,10 +327,14 @@ describe("rowsToSearch", () => {
         category: "poi",
         name: "Office",
         address: "2 Work St",
-        walkMinutes: 15,
-        transitMinutes: null,
-        cycleMinutes: null,
-        driveMinutes: null,
+        walkSeconds: 900,
+        walkMeters: 1500,
+        transitSeconds: null,
+        transitMeters: null,
+        cycleSeconds: null,
+        cycleMeters: null,
+        driveSeconds: null,
+        driveMeters: null,
         metadata: { poiId: "poi-42" },
       },
     ];
@@ -297,7 +345,7 @@ describe("rowsToSearch", () => {
     expect(poi.poiId).toBe("poi-42");
     expect(poi.label).toBe("Office");
     expect(poi.address).toBe("2 Work St");
-    expect(poi.travelStats).toEqual([{ mode: "walk", minutes: 15 }]);
+    expect(poi.travelStats).toEqual([{ mode: "walk", seconds: 900, meters: 1500 }]);
   });
 
   it("full round-trip: Search → DestinationInsert[] → DestinationDbRow[] → Search", () => {
@@ -325,7 +373,7 @@ describe("rowsToSearch", () => {
           poiId: "poi-42",
           label: "Office",
           address: "2 Work St",
-          travelStats: [{ mode: "walk", minutes: 15 }],
+          travelStats: [{ mode: "walk", seconds: 900, meters: 1500 }],
         },
       ],
       createdAt: "2024-01-01T00:00:00.000Z",
@@ -374,7 +422,7 @@ describe("rowsToSearch", () => {
     expect(poi.poiId).toBe("poi-42");
     expect(poi.label).toBe("Office");
     expect(poi.address).toBe("2 Work St");
-    expect(poi.travelStats).toEqual([{ mode: "walk", minutes: 15 }]);
+    expect(poi.travelStats).toEqual([{ mode: "walk", seconds: 900, meters: 1500 }]);
   });
 
   it("empty pois and amenityGroups → empty results", () => {
