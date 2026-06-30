@@ -4,21 +4,31 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import type { Folder, Poi, Search } from "@cribsearch/shared-types";
-import { SEED_FOLDERS, SEED_POIS, SEED_SEARCHES } from "./fixtures";
+import type {
+  CreatePoiRequest,
+  Folder,
+  Poi,
+  Search,
+  UpdatePoiRequest,
+} from "@cribsearch/shared-types";
+import * as api from "./api";
 
 interface StoreActions {
   addSearch: (search: Search) => void;
   deleteSearch: (id: string) => void;
   moveSearchToFolder: (searchId: string, folderId: string | undefined) => void;
 
-  addPoi: (poi: Poi) => void;
-  updatePoi: (id: string, updates: Partial<Omit<Poi, "id">>) => void;
-  deletePoi: (id: string) => void;
+  /** Creates a POI via the API and appends the server response to local state. */
+  addPoi: (input: CreatePoiRequest) => Promise<Poi>;
+  /** Updates a POI via the API and replaces the local record with the server response. */
+  updatePoi: (id: string, input: UpdatePoiRequest) => Promise<Poi>;
+  /** Deletes a POI via the API and removes it from local state. */
+  deletePoi: (id: string) => Promise<void>;
 
   addFolder: (folder: Folder) => void;
   renameFolder: (id: string, name: string) => void;
@@ -36,9 +46,23 @@ type Store = StoreState & StoreActions;
 const StoreContext = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [searches, setSearches] = useState<Search[]>(SEED_SEARCHES);
-  const [pois, setPois] = useState<Poi[]>(SEED_POIS);
-  const [folders, setFolders] = useState<Folder[]>(SEED_FOLDERS);
+  const [searches, setSearches] = useState<Search[]>([]);
+  const [pois, setPois] = useState<Poi[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+
+  // Hydrate POIs from the API on mount. On failure, log the error and keep an
+  // empty list so the rest of the UI remains functional.
+  useEffect(() => {
+    api
+      .listPois()
+      .then((data) => setPois(data))
+      .catch((err: unknown) => {
+        console.error(
+          "Failed to load POIs:",
+          err instanceof Error ? err.message : err,
+        );
+      });
+  }, []);
 
   const addSearch = useCallback(
     (search: Search) => setSearches((prev) => [search, ...prev]),
@@ -56,21 +80,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const addPoi = useCallback(
-    (poi: Poi) => setPois((prev) => [...prev, poi]),
-    [],
-  );
+  const addPoi = useCallback(async (input: CreatePoiRequest): Promise<Poi> => {
+    const poi = await api.createPoi(input);
+    setPois((prev) => [...prev, poi]);
+    return poi;
+  }, []);
+
   const updatePoi = useCallback(
-    (id: string, updates: Partial<Omit<Poi, "id">>) =>
-      setPois((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-      ),
+    async (id: string, input: UpdatePoiRequest): Promise<Poi> => {
+      const poi = await api.updatePoi(id, input);
+      setPois((prev) => prev.map((p) => (p.id === id ? poi : p)));
+      return poi;
+    },
     [],
   );
-  const deletePoi = useCallback(
-    (id: string) => setPois((prev) => prev.filter((p) => p.id !== id)),
-    [],
-  );
+
+  const deletePoi = useCallback(async (id: string): Promise<void> => {
+    await api.deletePoi(id);
+    setPois((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   const addFolder = useCallback(
     (folder: Folder) => setFolders((prev) => [...prev, folder]),
