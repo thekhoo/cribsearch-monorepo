@@ -34,10 +34,13 @@ Globals:
 Resources:
   JourneyDeadLetterQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-cribsearch-journey-deadletter"
 
   JourneyQueue:
     Type: AWS::SQS::Queue
     Properties:
+      QueueName: !Sub "${Environment}-cribsearch-journey"
       VisibilityTimeout: 60
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt JourneyDeadLetterQueue.Arn
@@ -86,7 +89,7 @@ Resources:
           NODE_ENV: production
       Policies:
         - SQSPollerPolicy:
-            QueueName: !GetAtt JourneyQueue.QueueName
+            QueueName: !GetAtt TaskQueue.QueueName
         - SSMParameterReadPolicy:
             ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
@@ -96,9 +99,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt JourneyQueue.Arn
-            Configuration:
-              BatchSize: 10
-              MaximumBatchingWindowInSeconds: 30
+            BatchSize: 10
+            MaximumBatchingWindowInSeconds: 30
+            ScalingConfig:
               MaximumConcurrency: 2
             FunctionResponseTypes:
               - ReportBatchItemFailures
