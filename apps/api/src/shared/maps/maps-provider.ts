@@ -4,6 +4,9 @@ import type {
   TransportMode,
   TravelStat,
 } from "@cribsearch/shared-types";
+import type { GeoCoordinate } from "./google/types";
+
+export type { GeoCoordinate };
 
 export interface DestinationTravelResult {
   id: string;
@@ -13,6 +16,8 @@ export interface DestinationTravelResult {
 }
 
 export interface MapsProvider {
+  geocode(address: string): Promise<GeoCoordinate>;
+
   findAmenities(
     address: string,
     categories: AmenityCategory[],

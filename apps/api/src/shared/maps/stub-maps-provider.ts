@@ -9,10 +9,12 @@ import type {
   MapsProvider,
 } from "./maps-provider";
 import { MapsError } from "./maps-provider";
+import type { GeoCoordinate } from "./google/types";
 
 export class StubMapsProvider implements MapsProvider {
   private amenityFailure: "permanent" | "transient" | null = null;
   private travelStatsFailure: "transient" | null = null;
+  private geocodeFailure: "permanent" | "transient" | null = null;
   private readonly failingAddresses = new Set<string>();
 
   forceAmenityFailure(kind: "permanent" | "transient" | null): void {
@@ -23,6 +25,10 @@ export class StubMapsProvider implements MapsProvider {
     this.travelStatsFailure = kind;
   }
 
+  forceGeocodeFailure(kind: "permanent" | "transient" | null): void {
+    this.geocodeFailure = kind;
+  }
+
   addFailingAddress(address: string): void {
     this.failingAddresses.add(address);
   }
@@ -30,7 +36,18 @@ export class StubMapsProvider implements MapsProvider {
   reset(): void {
     this.amenityFailure = null;
     this.travelStatsFailure = null;
+    this.geocodeFailure = null;
     this.failingAddresses.clear();
+  }
+
+  async geocode(_address: string): Promise<GeoCoordinate> {
+    if (this.geocodeFailure === "permanent") {
+      throw new MapsError("address not found", "permanent");
+    }
+    if (this.geocodeFailure === "transient") {
+      throw new MapsError("provider timeout", "transient");
+    }
+    return { lat: -33.8688, lng: 151.2093 };
   }
 
   async findAmenities(
