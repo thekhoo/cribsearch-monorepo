@@ -22,6 +22,14 @@ Globals:
       - arm64
     Timeout: 30
     MemorySize: 512
+    Environment:
+      Variables:
+        NODE_ENV: production
+        ENVIRONMENT: !Ref Environment
+        SERVICE_NAME: cribsearch
+    Tags:
+      application: cribsearch
+      repository: thekhoo/cribsearch-monorepo
 
 Resources:
   JourneyDeadLetterQueue:
@@ -80,7 +88,7 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/cribsearch/service/postgres/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
@@ -88,6 +96,10 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt JourneyQueue.Arn
+            Configuration:
+              BatchSize: 10
+              MaximumBatchingWindowInSeconds: 30
+              MaximumConcurrency: 2
             FunctionResponseTypes:
               - ReportBatchItemFailures
 
