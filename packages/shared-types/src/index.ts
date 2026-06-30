@@ -21,6 +21,11 @@ export interface TravelStat {
   meters: number;
 }
 
+export interface GeoCoordinate {
+  lat: number;
+  lng: number;
+}
+
 export interface Destination {
   id: string;
   name: string;
@@ -37,6 +42,7 @@ export interface Poi {
   id: string;
   label: string;
   address: string;
+  geocode?: GeoCoordinate;
 }
 
 export interface AttachedPoi {
@@ -44,6 +50,16 @@ export interface AttachedPoi {
   label: string;
   address: string;
   travelStats: TravelStat[];
+}
+
+export interface CreatePoiRequest {
+  label: string;
+  address: string;
+}
+
+export interface UpdatePoiRequest {
+  label: string;
+  address: string;
 }
 
 export interface Folder {
