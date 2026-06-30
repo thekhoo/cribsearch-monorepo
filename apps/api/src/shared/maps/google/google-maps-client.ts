@@ -69,7 +69,7 @@ export class GoogleMapsClient {
     origin: string;
     destination: string;
     mode: TransportMode;
-  }): Promise<number> {
+  }): Promise<{ seconds: number; meters: number }> {
     const url =
       `https://maps.googleapis.com/maps/api/directions/json` +
       `?origin=${encodeURIComponent(args.origin)}` +
@@ -89,6 +89,7 @@ export class GoogleMapsClient {
       routes: Array<{
         legs: Array<{
           duration: { value: number };
+          distance: { value: number };
         }>;
       }>;
     };
@@ -97,12 +98,12 @@ export class GoogleMapsClient {
       throw new MapsError(body.status, classifyGoogleStatus(body.status));
     }
 
-    const seconds = body.routes[0]?.legs[0]?.duration.value;
-    if (seconds === undefined) {
+    const leg = body.routes[0]?.legs[0];
+    if (leg === undefined) {
       throw new MapsError("ZERO_RESULTS", "permanent");
     }
 
-    return seconds;
+    return { seconds: leg.duration.value, meters: leg.distance.value };
   }
 
   async nearby(args: {
@@ -130,6 +131,7 @@ export class GoogleMapsClient {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": this.token,
+        // places types can be found here: https://developers.google.com/maps/documentation/places/web-service/nearby-search
         "X-Goog-FieldMask":
           "places.id,places.displayName,places.formattedAddress,places.location",
       },

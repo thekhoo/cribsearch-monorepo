@@ -5,10 +5,14 @@ export interface DestinationInsert {
   category: string;
   name: string;
   address: string;
-  walkMinutes: number | null;
-  transitMinutes: number | null;
-  cycleMinutes: number | null;
-  driveMinutes: number | null;
+  walkSeconds: number | null;
+  walkMeters: number | null;
+  transitSeconds: number | null;
+  transitMeters: number | null;
+  cycleSeconds: number | null;
+  cycleMeters: number | null;
+  driveSeconds: number | null;
+  driveMeters: number | null;
   metadata: Record<string, unknown>;
 }
 
@@ -16,10 +20,14 @@ export interface DestinationDbRow {
   category: string;
   name: string;
   address: string;
-  walkMinutes: number | null;
-  transitMinutes: number | null;
-  cycleMinutes: number | null;
-  driveMinutes: number | null;
+  walkSeconds: number | null;
+  walkMeters: number | null;
+  transitSeconds: number | null;
+  transitMeters: number | null;
+  cycleSeconds: number | null;
+  cycleMeters: number | null;
+  driveSeconds: number | null;
+  driveMeters: number | null;
   metadata: Record<string, unknown>;
 }
 
@@ -34,28 +42,32 @@ export const insertDestinations = async (
 ): Promise<void> => {
   if (rows.length === 0) return;
 
-  // Build parameter placeholders: each row contributes 10 params
+  // Build parameter placeholders: each row contributes 14 params
   const values: unknown[] = [];
   const placeholders = rows.map((row, i) => {
-    const base = i * 10;
+    const base = i * 14;
     values.push(
       uuidv7(),
       searchId,
       row.category,
       row.name,
       row.address,
-      row.walkMinutes,
-      row.transitMinutes,
-      row.cycleMinutes,
-      row.driveMinutes,
+      row.walkSeconds,
+      row.walkMeters,
+      row.transitSeconds,
+      row.transitMeters,
+      row.cycleSeconds,
+      row.cycleMeters,
+      row.driveSeconds,
+      row.driveMeters,
       JSON.stringify(row.metadata),
     );
-    return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10})`;
+    return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11},$${base + 12},$${base + 13},$${base + 14})`;
   });
 
   const sql = `
     INSERT INTO search_destinations
-      (search_destination_id, search_id, category, name, address, walk_minutes, transit_minutes, cycle_minutes, drive_minutes, metadata)
+      (search_destination_id, search_id, category, name, address, walk_seconds, walk_distance_m, transit_seconds, transit_distance_m, cycle_seconds, cycle_distance_m, drive_seconds, drive_distance_m, metadata)
     VALUES
       ${placeholders.join(",")}
     ON CONFLICT (search_id, address) DO NOTHING
@@ -73,13 +85,17 @@ export const getDestinations = async (
     category: string;
     name: string;
     address: string;
-    walk_minutes: number | null;
-    transit_minutes: number | null;
-    cycle_minutes: number | null;
-    drive_minutes: number | null;
+    walk_seconds: number | null;
+    walk_distance_m: number | null;
+    transit_seconds: number | null;
+    transit_distance_m: number | null;
+    cycle_seconds: number | null;
+    cycle_distance_m: number | null;
+    drive_seconds: number | null;
+    drive_distance_m: number | null;
     metadata: Record<string, unknown>;
   }>(
-    `SELECT category, name, address, walk_minutes, transit_minutes, cycle_minutes, drive_minutes, metadata
+    `SELECT category, name, address, walk_seconds, walk_distance_m, transit_seconds, transit_distance_m, cycle_seconds, cycle_distance_m, drive_seconds, drive_distance_m, metadata
      FROM search_destinations
      WHERE search_id=$1`,
     [searchId],
@@ -89,10 +105,14 @@ export const getDestinations = async (
     category: r.category,
     name: r.name,
     address: r.address,
-    walkMinutes: r.walk_minutes,
-    transitMinutes: r.transit_minutes,
-    cycleMinutes: r.cycle_minutes,
-    driveMinutes: r.drive_minutes,
+    walkSeconds: r.walk_seconds,
+    walkMeters: r.walk_distance_m,
+    transitSeconds: r.transit_seconds,
+    transitMeters: r.transit_distance_m,
+    cycleSeconds: r.cycle_seconds,
+    cycleMeters: r.cycle_distance_m,
+    driveSeconds: r.drive_seconds,
+    driveMeters: r.drive_distance_m,
     metadata: r.metadata,
   }));
 };

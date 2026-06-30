@@ -104,23 +104,18 @@ describe("GoogleMapsClient.geocode", () => {
 // ── GoogleMapsClient.directions ───────────────────────────────────────────────
 
 describe("GoogleMapsClient.directions", () => {
-  it("returns duration seconds on OK response", async () => {
+  it("returns { seconds, meters } on OK response", async () => {
     const fakeFetch = makeFetch({
       status: "OK",
-      routes: [{ legs: [{ duration: { value: 1234 } }] }],
+      routes: [{ legs: [{ duration: { value: 1234 }, distance: { value: 5678 } }] }],
     });
     const client = new GoogleMapsClient("test-token", { fetch: fakeFetch });
-    const seconds = await client.directions({
+    const result = await client.directions({
       origin: "A",
       destination: "B",
       mode: "walk",
     });
-    expect(seconds).toBe(1234);
-  });
-
-  it("rounds correctly when used with Math.round in provider", () => {
-    // 1234 seconds / 60 = 20.566... → rounds to 21
-    expect(Math.round(1234 / 60)).toBe(21);
+    expect(result).toEqual({ seconds: 1234, meters: 5678 });
   });
 
   it("throws permanent MapsError on ZERO_RESULTS", async () => {
@@ -228,11 +223,11 @@ describe("GoogleMapsClient.nearby", () => {
 // ── GoogleMapsProvider.computeTravelStats ─────────────────────────────────────
 
 describe("GoogleMapsProvider.computeTravelStats", () => {
-  it("builds correct TravelStat[] across multiple modes", async () => {
-    // walk: 600s = 10 min, transit: 900s = 15 min
+  it("builds correct TravelStat[] across multiple modes (raw seconds + meters, no division)", async () => {
+    // walk: 600s / 500m, transit: 900s / 1200m
     let callCount = 0;
     const fakeFetch = vi.fn().mockImplementation(() => {
-      const seconds = callCount === 0 ? 600 : 900;
+      const isWalk = callCount === 0;
       callCount++;
       return Promise.resolve({
         ok: true,
@@ -240,7 +235,16 @@ describe("GoogleMapsProvider.computeTravelStats", () => {
         json: () =>
           Promise.resolve({
             status: "OK",
-            routes: [{ legs: [{ duration: { value: seconds } }] }],
+            routes: [
+              {
+                legs: [
+                  {
+                    duration: { value: isWalk ? 600 : 900 },
+                    distance: { value: isWalk ? 500 : 1200 },
+                  },
+                ],
+              },
+            ],
           }),
       } as Response);
     });
@@ -259,8 +263,8 @@ describe("GoogleMapsProvider.computeTravelStats", () => {
     expect(result?.name).toBe("Office");
     expect(result?.address).toBe("2 Work St");
     expect(result?.travelStats).toEqual([
-      { mode: "walk", minutes: 10 },
-      { mode: "transit", minutes: 15 },
+      { mode: "walk", seconds: 600, meters: 500 },
+      { mode: "transit", seconds: 900, meters: 1200 },
     ]);
   });
 
@@ -282,8 +286,8 @@ describe("GoogleMapsProvider.findAmenities", () => {
    * Build a fake fetch that handles the sequence of requests:
    * 1. geocode → lat/lng
    * 2. nearby (supermarket) → two places
-   * 3. directions for place-1/walk → 600s
-   * 4. directions for place-2/walk → 900s (or error)
+   * 3. directions for place-1/walk → 600s / 500m
+   * 4. directions for place-2/walk → 900s / 1200m (or error)
    */
   function buildFetchSequence(
     secondPlaceDirections: "ok" | "permanent" | "transient",
@@ -306,20 +310,20 @@ describe("GoogleMapsProvider.findAmenities", () => {
         },
       ],
     };
-    const directionsOk = (value: number) => ({
+    const directionsOk = (seconds: number, meters: number) => ({
       status: "OK",
-      routes: [{ legs: [{ duration: { value } }] }],
+      routes: [{ legs: [{ duration: { value: seconds }, distance: { value: meters } }] }],
     });
     const directionsErr = (status: string) => ({ status, routes: [] });
 
     const responses: Array<{ body: unknown; httpStatus?: number }> = [
       { body: geocodeResponse },
       { body: nearbyResponse },
-      { body: directionsOk(600) }, // place-1 directions
+      { body: directionsOk(600, 500) }, // place-1 directions
     ];
 
     if (secondPlaceDirections === "ok") {
-      responses.push({ body: directionsOk(900) }); // place-2 directions
+      responses.push({ body: directionsOk(900, 1200) }); // place-2 directions
     } else if (secondPlaceDirections === "permanent") {
       responses.push({ body: directionsErr("ZERO_RESULTS") }); // place-2 permanent fail
     } else {
@@ -353,10 +357,10 @@ describe("GoogleMapsProvider.findAmenities", () => {
     const [d1, d2] = group.destinations;
     expect(d1?.id).toBe("place-1");
     expect(d1?.name).toBe("Coles");
-    expect(d1?.travelStats).toEqual([{ mode: "walk", minutes: 10 }]);
+    expect(d1?.travelStats).toEqual([{ mode: "walk", seconds: 600, meters: 500 }]);
     expect(d2?.id).toBe("place-2");
     expect(d2?.name).toBe("Woolworths");
-    expect(d2?.travelStats).toEqual([{ mode: "walk", minutes: 15 }]);
+    expect(d2?.travelStats).toEqual([{ mode: "walk", seconds: 900, meters: 1200 }]);
   });
 
   it("drops amenity that throws a permanent MapsError on directions", async () => {

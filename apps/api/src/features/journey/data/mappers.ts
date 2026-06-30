@@ -4,7 +4,6 @@ import type {
   AttachedPoi,
   Destination,
   Search,
-  TransportMode,
   TravelStat,
 } from "@cribsearch/shared-types";
 import type { DestinationDbRow, DestinationInsert } from "./search-destinations";
@@ -13,40 +12,41 @@ import type { SearchRow } from "./searches";
 // ── Travel stat <-> column helpers ────────────────────────────────────────────
 
 interface TravelColumns {
-  walkMinutes: number | null;
-  transitMinutes: number | null;
-  cycleMinutes: number | null;
-  driveMinutes: number | null;
+  walkSeconds: number | null;
+  walkMeters: number | null;
+  transitSeconds: number | null;
+  transitMeters: number | null;
+  cycleSeconds: number | null;
+  cycleMeters: number | null;
+  driveSeconds: number | null;
+  driveMeters: number | null;
 }
 
-const MODE_COLUMN_MAP: ReadonlyArray<{ mode: TransportMode; key: keyof TravelColumns }> = [
-  { mode: "walk", key: "walkMinutes" },
-  { mode: "transit", key: "transitMinutes" },
-  { mode: "cycle", key: "cycleMinutes" },
-  { mode: "drive", key: "driveMinutes" },
-];
+const MODE_COLUMN_MAP = [
+  { mode: "walk", secondsKey: "walkSeconds", metersKey: "walkMeters" },
+  { mode: "transit", secondsKey: "transitSeconds", metersKey: "transitMeters" },
+  { mode: "cycle", secondsKey: "cycleSeconds", metersKey: "cycleMeters" },
+  { mode: "drive", secondsKey: "driveSeconds", metersKey: "driveMeters" },
+] as const;
 
 export const travelStatsToColumns = (stats: TravelStat[]): TravelColumns => {
   const result: TravelColumns = {
-    walkMinutes: null,
-    transitMinutes: null,
-    cycleMinutes: null,
-    driveMinutes: null,
+    walkSeconds: null,
+    walkMeters: null,
+    transitSeconds: null,
+    transitMeters: null,
+    cycleSeconds: null,
+    cycleMeters: null,
+    driveSeconds: null,
+    driveMeters: null,
   };
   for (const stat of stats) {
-    switch (stat.mode) {
-      case "walk":
-        result.walkMinutes = stat.minutes;
+    for (const entry of MODE_COLUMN_MAP) {
+      if (entry.mode === stat.mode) {
+        result[entry.secondsKey] = stat.seconds;
+        result[entry.metersKey] = stat.meters;
         break;
-      case "transit":
-        result.transitMinutes = stat.minutes;
-        break;
-      case "cycle":
-        result.cycleMinutes = stat.minutes;
-        break;
-      case "drive":
-        result.driveMinutes = stat.minutes;
-        break;
+      }
     }
   }
   return result;
@@ -54,10 +54,10 @@ export const travelStatsToColumns = (stats: TravelStat[]): TravelColumns => {
 
 export const columnsToTravelStats = (row: TravelColumns): TravelStat[] => {
   const stats: TravelStat[] = [];
-  for (const { mode, key } of MODE_COLUMN_MAP) {
-    const minutes = row[key];
-    if (minutes !== null) {
-      stats.push({ mode, minutes });
+  for (const { mode, secondsKey, metersKey } of MODE_COLUMN_MAP) {
+    const seconds = row[secondsKey];
+    if (seconds !== null) {
+      stats.push({ mode, seconds, meters: row[metersKey] ?? 0 });
     }
   }
   return stats;

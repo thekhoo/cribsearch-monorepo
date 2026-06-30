@@ -25,12 +25,12 @@ export class GoogleMapsProvider implements MapsProvider {
       const travelStats: TravelStat[] = [];
 
       for (const mode of modes) {
-        const seconds = await this.client.directions({
+        const { seconds, meters } = await this.client.directions({
           origin: fromAddress,
           destination: dest.address,
           mode,
         });
-        travelStats.push({ mode, minutes: Math.round(seconds / 60) });
+        travelStats.push({ mode, seconds, meters });
       }
 
       results.push({

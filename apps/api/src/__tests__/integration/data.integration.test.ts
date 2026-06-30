@@ -69,7 +69,7 @@ describe("data layer integration", () => {
               id: "supermarket-1",
               name: "Stub supermarket",
               // no address — falls back to id in storage
-              travelStats: [{ mode: "walk", minutes: 5 }],
+              travelStats: [{ mode: "walk", seconds: 300, meters: 500 }],
             },
           ],
         },
@@ -79,7 +79,7 @@ describe("data layer integration", () => {
           poiId: "dest-0",
           label: "Work",
           address: "456 Office St",
-          travelStats: [{ mode: "walk", minutes: 10 }],
+          travelStats: [{ mode: "walk", seconds: 600, meters: 1000 }],
         },
       ],
       createdAt: new Date().toISOString(),
@@ -109,14 +109,14 @@ describe("data layer integration", () => {
     const dest = group.destinations[0]!;
     expect(dest.id).toBe("supermarket-1");
     expect(dest.address).toBeUndefined();
-    expect(dest.travelStats).toEqual([{ mode: "walk", minutes: 5 }]);
+    expect(dest.travelStats).toEqual([{ mode: "walk", seconds: 300, meters: 500 }]);
 
     // POI: address preserved
     expect(reconstructed.pois).toHaveLength(1);
     const poi = reconstructed.pois[0]!;
     expect(poi.label).toBe("Work");
     expect(poi.address).toBe("456 Office St");
-    expect(poi.travelStats).toEqual([{ mode: "walk", minutes: 10 }]);
+    expect(poi.travelStats).toEqual([{ mode: "walk", seconds: 600, meters: 1000 }]);
   });
 
   it("getSearchRow returns null for a non-uuid id (22P02 guard)", async () => {
