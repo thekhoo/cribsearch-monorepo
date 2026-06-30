@@ -54,7 +54,7 @@ Direction: eventually the user should be able to choose from all amenity types
 the underlying maps provider exposes, with similar/overlapping provider types
 **grouped** into friendlier categories so the choice stays simple.
 
-### POI (Point of Interest)
+### POI (Place of Interest)
 
 A place the **user** cares about and labels themselves (e.g. "Work", "Family").
 A POI has a user-chosen label and an address.

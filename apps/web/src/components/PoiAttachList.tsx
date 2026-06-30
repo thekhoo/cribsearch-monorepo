@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Poi } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 
 interface PoiAttachListProps {
@@ -17,6 +16,8 @@ export default function PoiAttachList({
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickLabel, setQuickLabel] = useState("Work");
   const [quickAddress, setQuickAddress] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   function toggle(id: string) {
     if (attachedIds.includes(id)) {
@@ -26,18 +27,25 @@ export default function PoiAttachList({
     }
   }
 
-  function handleQuickAdd() {
-    if (!quickAddress.trim()) return;
-    const newPoi: Poi = {
-      id: crypto.randomUUID(),
-      label: quickLabel.trim() || "Work",
-      address: quickAddress.trim(),
-    };
-    addPoi(newPoi);
-    onChange([...attachedIds, newPoi.id]);
-    setQuickLabel("Work");
-    setQuickAddress("");
-    setShowQuickAdd(false);
+  async function handleQuickAdd() {
+    if (!quickAddress.trim() || isAdding) return;
+    setIsAdding(true);
+    setAddError(null);
+    try {
+      const newPoi = await addPoi({
+        label: quickLabel.trim() || "Work",
+        address: quickAddress.trim(),
+      });
+      // Use the server-assigned id so the attachment references a real DB record.
+      onChange([...attachedIds, newPoi.id]);
+      setQuickLabel("Work");
+      setQuickAddress("");
+      setShowQuickAdd(false);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : "Failed to add POI");
+    } finally {
+      setIsAdding(false);
+    }
   }
 
   return (
@@ -88,42 +96,53 @@ export default function PoiAttachList({
         </div>
       )}
       {showQuickAdd && (
-        <div className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <div>
-            <label className="block text-xs text-gray-600">Label</label>
-            <input
-              type="text"
-              value={quickLabel}
-              onChange={(e) => setQuickLabel(e.target.value)}
-              className="mt-0.5 w-28 rounded border border-gray-300 px-2 py-1 text-sm"
-              placeholder="Work"
-            />
+        <div className="mt-2 space-y-1 rounded-lg border border-gray-200 bg-gray-50 p-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className="block text-xs text-gray-600">Label</label>
+              <input
+                type="text"
+                value={quickLabel}
+                onChange={(e) => setQuickLabel(e.target.value)}
+                disabled={isAdding}
+                className="mt-0.5 w-28 rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-50"
+                placeholder="Work"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-600">Address</label>
+              <input
+                type="text"
+                value={quickAddress}
+                onChange={(e) => setQuickAddress(e.target.value)}
+                disabled={isAdding}
+                className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-50"
+                placeholder="123 Main St, Sydney"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleQuickAdd()}
+              disabled={!quickAddress.trim() || isAdding}
+              className="rounded bg-gray-900 px-3 py-1 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {isAdding ? "Adding…" : "Add"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowQuickAdd(false);
+                setAddError(null);
+              }}
+              disabled={isAdding}
+              className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+            >
+              Cancel
+            </button>
           </div>
-          <div className="flex-1">
-            <label className="block text-xs text-gray-600">Address</label>
-            <input
-              type="text"
-              value={quickAddress}
-              onChange={(e) => setQuickAddress(e.target.value)}
-              className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm"
-              placeholder="123 Main St, Sydney"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleQuickAdd}
-            disabled={!quickAddress.trim()}
-            className="rounded bg-gray-900 px-3 py-1 text-sm font-medium text-white disabled:opacity-40"
-          >
-            Add
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowQuickAdd(false)}
-            className="px-2 py-1 text-sm text-gray-500 hover:text-gray-700"
-          >
-            Cancel
-          </button>
+          {addError && (
+            <p className="text-sm text-red-600">{addError}</p>
+          )}
         </div>
       )}
     </div>

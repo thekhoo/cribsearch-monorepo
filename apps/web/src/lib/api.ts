@@ -1,13 +1,17 @@
 import type {
   AmenityCategory,
+  CreatePoiRequest,
   JourneySearchRequest,
   JourneySearchResponse,
   Poi,
   RequestStatus,
   Search,
   TransportMode,
+  UpdatePoiRequest,
 } from "@cribsearch/shared-types";
 import { API_BASE_URL } from "./config";
+
+export const HARDCODED_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export interface SearchInput {
   address: string;
@@ -124,4 +128,67 @@ export async function runSearch(input: SearchInput): Promise<SearchResult> {
   throw new Error(
     `Search timed out after ${MAX_ATTEMPTS} attempts (~${Math.round((MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000)}s). Please try again.`,
   );
+}
+
+// ── POI endpoints ──────────────────────────────────────────────────
+
+function buildPoiHeaders(withBody = false): HeadersInit {
+  const headers: Record<string, string> = {
+    "x-user-id": HARDCODED_USER_ID,
+  };
+  if (withBody) headers["Content-Type"] = "application/json";
+  return headers;
+}
+
+/** Fetch all POIs for the hardcoded user. */
+export async function listPois(): Promise<Poi[]> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/pois`, {
+    headers: buildPoiHeaders(),
+  });
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(`Failed to load POIs: ${message}`);
+  }
+  return response.json() as Promise<Poi[]>;
+}
+
+/** Create a new POI and return the server-assigned record (with id and geocode). */
+export async function createPoi(input: CreatePoiRequest): Promise<Poi> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/pois`, {
+    method: "POST",
+    headers: buildPoiHeaders(true),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(message);
+  }
+  return response.json() as Promise<Poi>;
+}
+
+/** Update an existing POI and return the updated server record. */
+export async function updatePoi(id: string, input: UpdatePoiRequest): Promise<Poi> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/pois/${id}`, {
+    method: "PUT",
+    headers: buildPoiHeaders(true),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(message);
+  }
+  return response.json() as Promise<Poi>;
+}
+
+/** Delete a POI. Treats 204 as success; throws on any other non-ok status. */
+export async function deletePoi(id: string): Promise<void> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/pois/${id}`, {
+    method: "DELETE",
+    headers: buildPoiHeaders(),
+  });
+  if (response.status === 204) return;
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(message);
+  }
 }

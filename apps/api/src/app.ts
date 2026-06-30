@@ -6,6 +6,7 @@ import type { ApiError } from "@cribsearch/shared-types";
 import { env } from "./shared/config/env";
 import { healthRouter } from "./routes/health";
 import { journeyRouter } from "./features/journey/controller/journey-routes";
+import { poiRouter } from "./features/pois/controller/poi-routes";
 
 export const createApp = (): Express => {
   const app = express();
@@ -15,8 +16,8 @@ export const createApp = (): Express => {
   app.use(
     cors({
       origin: env.corsAllowedOrigins,
-      methods: ["GET", "POST", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "x-request-id"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "x-request-id", "x-user-id"],
       exposedHeaders: ["x-request-id"],
     }),
   );
@@ -27,6 +28,7 @@ export const createApp = (): Express => {
     const requestId = (Array.isArray(headerId) ? headerId[0] : headerId) ?? randomUUID();
     req.id = requestId;
     req.log = logger.child({ component: "http", requestId });
+    req.userId = (req.headers["x-user-id"] as string | undefined) ?? undefined;
     res.setHeader("x-request-id", requestId);
     next();
   });
@@ -37,6 +39,7 @@ export const createApp = (): Express => {
   // v1 routes
   app.use("/cribsearch/v1/health", healthRouter);
   app.use("/cribsearch/v1/journey", journeyRouter);
+  app.use("/cribsearch/v1/pois", poiRouter);
 
   // 404 fallback
   app.use((_req: Request, res: Response) => {

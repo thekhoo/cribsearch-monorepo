@@ -1,5 +1,6 @@
-h1:sh40/1Fk6xGwcyqYt1VY4cV0VhXDsYBS8DvDtxv0Qgg=
+h1:4+vDDU1Op/xxhdB5LvvnR8/H5o329kOfKbXXL623mMw=
 20260625000000_init.sql h1:uBrVVLOHUxEI3MObGK70HIYXhfOqRbVvvPGo7HxqlbQ=
 20260628120000_rename_columns.sql h1:hrtCErfDosdiiK66pgJoYbeo9Pc2vP4F1XqIRIHl4kw=
 20260628140000_utc_timestamps_and_uuid7_defaults.sql h1:Pgaw6FVRgNEGcL1lvsWuyDxqxqAkjpC29LGrEEB9+nQ=
 20260630120000_rename_minutes_to_seconds.sql h1:8P2I4FheHl4PP/vj47AdIwjX4mMDwir+9Z6iOxOhixc=
+20260630140000_places_of_interest.sql h1:WoG1LcelQIa7qSf8De60cKeQ8kHLCscfkNkad/ksP44=

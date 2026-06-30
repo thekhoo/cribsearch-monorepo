@@ -9,9 +9,14 @@ import type { DestinationTravelResult, MapsProvider } from "../maps-provider";
 import { MapsError } from "../maps-provider";
 import { GoogleMapsClient } from "./google-maps-client";
 import { toPlacesIncludedType } from "./mappers";
+import type { GeoCoordinate } from "./types";
 
 export class GoogleMapsProvider implements MapsProvider {
   constructor(private readonly client: GoogleMapsClient) {}
+
+  async geocode(address: string): Promise<GeoCoordinate> {
+    return this.client.geocode(address);
+  }
 
   async computeTravelStats(
     fromAddress: string,
