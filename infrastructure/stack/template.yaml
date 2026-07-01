@@ -62,7 +62,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt JourneyQueue.QueueName
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${Environment}/cribsearch/service/postgres/*"
+            ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
