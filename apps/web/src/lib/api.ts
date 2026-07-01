@@ -1,8 +1,8 @@
 import type {
   AmenityCategory,
   CreatePoiRequest,
-  JourneySearchRequest,
-  JourneySearchResponse,
+  SearchRequest,
+  SearchResponse,
   Poi,
   RequestStatus,
   Search,
@@ -60,21 +60,21 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
 }
 
 /**
- * Submit an async journey search to the API and poll until a terminal status
+ * Submit an async search to the API and poll until a terminal status
  * is reached, then return the completed Search.
  *
  * Throws on non-202 POST responses, poll failures, "Failed" status, or timeout.
  * Returns { search } on Complete, { search, partialFailure } on PartialFailure.
  */
 export async function runSearch(input: SearchInput): Promise<SearchResult> {
-  const requestBody: JourneySearchRequest = {
+  const requestBody: SearchRequest = {
     address: input.address,
     modes: input.modes,
     amenityCategories: input.amenityCategories,
     pois: input.attachedPois.map((p) => ({ label: p.label, address: p.address })),
   };
 
-  const postResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/journey`, {
+  const postResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody),
@@ -90,14 +90,14 @@ export async function runSearch(input: SearchInput): Promise<SearchResult> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    const pollResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/journey/${id}`);
+    const pollResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches/${id}`);
 
     if (!pollResponse.ok) {
       const message = await extractErrorMessage(pollResponse);
       throw new Error(`Failed to poll search status: ${message}`);
     }
 
-    const result = (await pollResponse.json()) as JourneySearchResponse;
+    const result = (await pollResponse.json()) as SearchResponse;
 
     if (!TERMINAL_STATUSES.has(result.status)) {
       continue;

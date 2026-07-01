@@ -4,10 +4,10 @@ import {
   rowsToSearch,
   travelStatsToColumns,
   columnsToTravelStats,
-} from "../features/journey/data/mappers";
+} from "../features/searches/data/mappers";
 import type { Search } from "@cribsearch/shared-types";
-import type { DestinationDbRow } from "../features/journey/data/search-destinations";
-import type { SearchRow } from "../features/journey/data/searches";
+import type { DestinationDbRow } from "../features/searches/data/search-destinations";
+import type { SearchRow } from "../features/searches/data/searches";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 

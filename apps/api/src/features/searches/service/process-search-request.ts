@@ -1,6 +1,6 @@
 import type {
   AttachedPoi,
-  JourneySearchMessage,
+  SearchMessage,
   Search,
 } from "@cribsearch/shared-types";
 import { logger } from "@cribsearch/logger";
@@ -16,13 +16,13 @@ const TERMINAL_STATUSES = new Set([
   "Failed",
 ]);
 
-export const processJourneyRequest = async (
-  msg: JourneySearchMessage,
+export const processSearchRequest = async (
+  msg: SearchMessage,
 ): Promise<void> => {
-  const { journeyRequestId: id } = msg;
+  const { searchRequestId: id } = msg;
   const log = logger.child({
-    component: "process-journey",
-    journeyRequestId: id,
+    component: "process-search",
+    searchRequestId: id,
   });
 
   const existing = await withTransaction((c) => getSearchRow(c, id));

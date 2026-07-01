@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { withTransaction } from "../../shared/db/with-transaction";
-import { insertSearch, markProcessing, updateResult, getSearchRow } from "../../features/journey/data/searches";
-import { insertDestinations, getDestinations } from "../../features/journey/data/search-destinations";
-import { searchToDestinationRows, rowsToSearch } from "../../features/journey/data/mappers";
-import type { JourneySearchRequest, Search } from "@cribsearch/shared-types";
+import { insertSearch, markProcessing, updateResult, getSearchRow } from "../../features/searches/data/searches";
+import { insertDestinations, getDestinations } from "../../features/searches/data/search-destinations";
+import { searchToDestinationRows, rowsToSearch } from "../../features/searches/data/mappers";
+import type { SearchRequest, Search } from "@cribsearch/shared-types";
 import { truncateAll } from "./db-helpers";
 
-const baseRequest: JourneySearchRequest = {
+const baseRequest: SearchRequest = {
   address: "123 Main St, Sydney",
   modes: ["walk"],
   amenityCategories: ["supermarket"],

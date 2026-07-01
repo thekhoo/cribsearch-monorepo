@@ -23,22 +23,22 @@ const flush = () => new Promise((r) => setImmediate(r));
 describe("logger", () => {
   it("emits valid JSON with level, message and bindings", async () => {
     const { logger, lines } = capture();
-    logger.info("hello", { journeyRequestId: "abc" });
+    logger.info("hello", { searchRequestId: "abc" });
     await flush();
     const entry = JSON.parse(lines[0] ?? "{}");
     expect(entry.level).toBe("info");
     expect(entry.message).toBe("hello");
     expect(entry.component).toBe("test");
-    expect(entry.journeyRequestId).toBe("abc");
+    expect(entry.searchRequestId).toBe("abc");
     expect(entry.timestamp).toBeTruthy();
   });
 
   it("merges child bindings onto every line", async () => {
     const { logger, lines } = capture();
-    logger.child({ journeyRequestId: "xyz" }).warn("oops");
+    logger.child({ searchRequestId: "xyz" }).warn("oops");
     await flush();
     const entry = JSON.parse(lines[0] ?? "{}");
-    expect(entry.journeyRequestId).toBe("xyz");
+    expect(entry.searchRequestId).toBe("xyz");
     expect(entry.level).toBe("warn");
   });
 

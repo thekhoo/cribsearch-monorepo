@@ -1,11 +1,11 @@
 import type { PoolClient } from "pg";
-import type { JourneySearchRequest, RequestStatus } from "@cribsearch/shared-types";
+import type { SearchRequest, RequestStatus } from "@cribsearch/shared-types";
 import { uuidv7 } from "uuidv7";
 
 export interface SearchRow {
   searchId: string;
   status: RequestStatus;
-  request: JourneySearchRequest;
+  request: SearchRequest;
   statusReason: string | null;
   createdAt: string;
 }
@@ -13,7 +13,7 @@ export interface SearchRow {
 /** Insert a new search row with status='Pending'. Returns searchId and status. */
 export const insertSearch = async (
   client: PoolClient,
-  request: JourneySearchRequest,
+  request: SearchRequest,
 ): Promise<{ searchId: string; status: "Pending" }> => {
   const searchId = uuidv7();
   const { rows } = await client.query<{ search_id: string }>(
@@ -60,7 +60,7 @@ export const getSearchRow = async (
     const { rows } = await client.query<{
       search_id: string;
       status: RequestStatus;
-      request: JourneySearchRequest;
+      request: SearchRequest;
       status_reason: string | null;
       created_at_utc: Date;
     }>(

@@ -79,7 +79,7 @@ export interface Search {
   createdAt: string;
 }
 
-// ── Async Journey Search ───────────────────────────────────────────
+// ── Async Search ───────────────────────────────────────────────────
 
 export type RequestStatus =
   | "Pending"
@@ -88,7 +88,7 @@ export type RequestStatus =
   | "PartialFailure"
   | "Failed";
 
-export interface JourneySearchRequest {
+export interface SearchRequest {
   address: string;
   modes: TransportMode[];
   amenityCategories: AmenityCategory[];
@@ -96,15 +96,15 @@ export interface JourneySearchRequest {
   nickname?: string;
 }
 
-export interface JourneySearchResponse {
+export interface SearchResponse {
   id: string;
   status: RequestStatus;
   search?: Search;
   error?: string;
 }
 
-export interface JourneySearchMessage extends JourneySearchRequest {
-  journeyRequestId: string;
+export interface SearchMessage extends SearchRequest {
+  searchRequestId: string;
 }
 
 // ── Generic API envelopes ───────────────────────────────────────────

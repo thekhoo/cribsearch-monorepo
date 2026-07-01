@@ -8,8 +8,8 @@
 The `apps/api` backend was structured as a layered hexagonal architecture:
 `routes/`, `services/`, `ports/` (interfaces), and `adapters/` (implementations),
 wired together by a `composition.ts` dependency-injection root that built a
-singleton `ports` container. The journey search persistence layer was originally
-an in-memory repository (a class implementing the `JourneyRequestRepository`
+singleton `ports` container. The search persistence layer was originally
+an in-memory repository (a class implementing the `SearchRequestRepository`
 port), which proved unsuitable for distributed Lambda deployments as described
 in ADR 0003.
 
@@ -20,7 +20,7 @@ feature cohesion and code clarity.
 ## Decision
 
 Reorganise `apps/api/src` around **features** rather than **technical layers**.
-Journey search will live under `features/journey/` with three subdirectories:
+Search will live under `features/searches/` with three subdirectories:
 `controller`, `service`, and `data`, each holding its concern for that feature.
 
 Key architectural choices:
@@ -58,26 +58,26 @@ Key architectural choices:
 - Feature cohesion: a feature folder contains all its routes, business logic, and
   data access in one place, reducing cognitive load when navigating the codebase.
 - **Resolves ADR 0003's limitation:** shared Postgres persistence is now
-  real and distributed. The worker Lambda's writes to `journeys` are immediately
+  real and distributed. The worker Lambda's writes to `searches` are immediately
   visible to `GET` calls in the API Lambda, fixing the in-memory visibility gap.
 
 **Negative / Trade-offs:**
 
-- **Integration-test-only journey tests:** Loss of easy in-memory swapping means
-  journey tests now require a real Postgres database. A separate `test:integration`
+- **Integration-test-only search tests:** Loss of easy in-memory swapping means
+  search tests now require a real Postgres database. A separate `test:integration`
   npm script runs these tests against the local Docker Postgres; unit tests for
   services (mocking data functions) remain lightweight but are fewer in number.
 - **Local end-to-end now requires two steps:** The in-process queue is gone, so
-  a local dev workflow is no longer single-round-trip (`POST /journey` → result
-  inline). Instead, `POST /journey` enqueues and returns `202 Pending`, and the
+  a local dev workflow is no longer single-round-trip (`POST /searches` → result
+  inline). Instead, `POST /searches` enqueues and returns `202 Pending`, and the
   worker must be invoked separately (e.g. by manually calling a test helper or
-  polling with `GET /journey/{id}`). This mirrors production but loses the
+  polling with `GET /searches/{id}`). This mirrors production but loses the
   convenience of immediate feedback.
 
 **Supersedes:**
 
 This ADR supersedes the portion of **ADR 0007** that anticipated a "raw `pg`
-adapter behind the `JourneyRequestRepository` port." There is no longer a
+adapter behind the `SearchRequestRepository` port." There is no longer a
 repository port; data functions and `withTransaction` replace it entirely.
 References to ADR 0003 (async queue / eventual consistency) and ADR 0007
 (per-universe databases) remain applicable and inform the persistence layer.

@@ -1,11 +1,11 @@
-import type { JourneySearchRequest } from "@cribsearch/shared-types";
+import type { SearchRequest } from "@cribsearch/shared-types";
 
 export type ValidationResult =
   | { ok: true }
   | { ok: false; error: string };
 
-export const validateJourneyRequest = (
-  req: JourneySearchRequest,
+export const validateSearchRequest = (
+  req: SearchRequest,
 ): ValidationResult => {
   const errors: string[] = [];
 
