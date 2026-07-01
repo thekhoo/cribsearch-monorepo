@@ -146,12 +146,13 @@ pnpm dev                      # runs web + api together (Turborepo)
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | `GET` | `/cribsearch/v1/health` | Health check |
-| `POST` | `/cribsearch/v1/searches` | Submit a Search Request → `202 Accepted` |
-| `GET` | `/cribsearch/v1/searches/:id` | Poll for Search Response |
-| `GET` | `/cribsearch/v1/pois` | List the current user's POIs |
-| `POST` | `/cribsearch/v1/pois` | Add a POI (geocodes the address) |
-| `PUT` | `/cribsearch/v1/pois/{poiId}` | Edit a POI (re-geocodes if the address changed) |
-| `DELETE` | `/cribsearch/v1/pois/{poiId}` | Delete a POI |
+| `POST` | `/cribsearch/v1/searches` | Submit a Search Request → `202 Accepted` (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/searches` | List the current user's searches (History), newest-first (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/searches/:id` | Poll for Search Response — user-scoped: 404 when not owned by the header user (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/pois` | List the current user's POIs (requires `x-user-id`) |
+| `POST` | `/cribsearch/v1/pois` | Add a POI (geocodes the address) (requires `x-user-id`) |
+| `PUT` | `/cribsearch/v1/pois/{poiId}` | Edit a POI (re-geocodes if the address changed) (requires `x-user-id`) |
+| `DELETE` | `/cribsearch/v1/pois/{poiId}` | Delete a POI (requires `x-user-id`) |
 
 > **Note:** The deployed `GET /searches/:id` round-trip does not yet reflect worker
 > updates because the repository is an in-memory dummy (each Lambda has its own

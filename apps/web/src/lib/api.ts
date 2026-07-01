@@ -3,6 +3,7 @@ import type {
   CreatePoiRequest,
   SearchRequest,
   SearchResponse,
+  SearchSummary,
   Poi,
   RequestStatus,
   Search,
@@ -76,7 +77,10 @@ export async function runSearch(input: SearchInput): Promise<SearchResult> {
 
   const postResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": HARDCODED_USER_ID,
+    },
     body: JSON.stringify(requestBody),
   });
 
@@ -90,7 +94,10 @@ export async function runSearch(input: SearchInput): Promise<SearchResult> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    const pollResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches/${id}`);
+    const pollResponse = await fetchWithTimeout(
+      `${API_BASE_URL}/cribsearch/v1/searches/${id}`,
+      { headers: { "x-user-id": HARDCODED_USER_ID } },
+    );
 
     if (!pollResponse.ok) {
       const message = await extractErrorMessage(pollResponse);
@@ -191,4 +198,18 @@ export async function deletePoi(id: string): Promise<void> {
     const message = await extractErrorMessage(response);
     throw new Error(message);
   }
+}
+
+// ── Search history endpoints ───────────────────────────────────────
+
+/** List all searches for the hardcoded user (History), newest-first. */
+export async function listSearches(): Promise<SearchSummary[]> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches`, {
+    headers: { "x-user-id": HARDCODED_USER_ID },
+  });
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(`Failed to load search history: ${message}`);
+  }
+  return response.json() as Promise<SearchSummary[]>;
 }

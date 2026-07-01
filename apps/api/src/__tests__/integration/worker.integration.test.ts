@@ -38,7 +38,7 @@ describe("worker integration", () => {
     const id = await insertPending();
     await processSearchRequest(buildMsg(id));
 
-    const view = await getSearchRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Complete");
     expect(view!.search).toBeDefined();
@@ -54,7 +54,7 @@ describe("worker integration", () => {
     const id = await insertPending();
     await processSearchRequest(buildMsg(id));
 
-    const view = await getSearchRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Failed");
     expect(view!.search).toBeUndefined();
@@ -66,7 +66,7 @@ describe("worker integration", () => {
     const id = await insertPending();
     await processSearchRequest(buildMsg(id));
 
-    const view = await getSearchRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("PartialFailure");
     expect(view!.search).toBeDefined();
@@ -92,14 +92,14 @@ describe("worker integration", () => {
     // First process to get to Complete
     await processSearchRequest(buildMsg(id));
 
-    const viewBefore = await getSearchRequest(id);
+    const viewBefore = await getSearchRequest(id, DEV_USER_ID);
     expect(viewBefore!.status).toBe("Complete");
 
     // Force a failure on a second call — if it were not a no-op it would flip status
     maps.forceAmenityFailure("permanent");
     await processSearchRequest(buildMsg(id));
 
-    const viewAfter = await getSearchRequest(id);
+    const viewAfter = await getSearchRequest(id, DEV_USER_ID);
     expect(viewAfter!.status).toBe("Complete");
   });
 
@@ -115,7 +115,7 @@ describe("worker integration", () => {
 
     await processSearchRequest(msg);
 
-    const view = await getSearchRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Complete");
     expect(view!.search!.pois).toHaveLength(0);

@@ -1,5 +1,9 @@
 import type { PoolClient } from "pg";
-import type { SearchRequest, RequestStatus } from "@cribsearch/shared-types";
+import type {
+  SearchRequest,
+  RequestStatus,
+  SearchSummary,
+} from "@cribsearch/shared-types";
 import { uuidv7 } from "uuidv7";
 
 export interface SearchRow {
@@ -52,22 +56,31 @@ export const updateResult = async (
   );
 };
 
-/** Fetch a single search row by search_id. Returns null for unknown or non-uuid ids. */
+/** Fetch a single search row by search_id. Returns null for unknown or non-uuid ids.
+ * When userId is provided, also filters by user_id (ownership check). */
 export const getSearchRow = async (
   client: PoolClient,
   id: string,
+  userId?: string,
 ): Promise<SearchRow | null> => {
+  type SearchRowRaw = {
+    search_id: string;
+    status: RequestStatus;
+    request: SearchRequest;
+    status_reason: string | null;
+    created_at_utc: Date;
+  };
   try {
-    const { rows } = await client.query<{
-      search_id: string;
-      status: RequestStatus;
-      request: SearchRequest;
-      status_reason: string | null;
-      created_at_utc: Date;
-    }>(
-      `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1`,
-      [id],
-    );
+    const { rows } =
+      userId === undefined
+        ? await client.query<SearchRowRaw>(
+            `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1`,
+            [id],
+          )
+        : await client.query<SearchRowRaw>(
+            `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1 AND user_id=$2`,
+            [id, userId],
+          );
     const row = rows[0];
     if (!row) return null;
     return {
@@ -89,4 +102,32 @@ export const getSearchRow = async (
     }
     throw err;
   }
+};
+
+/** List all search summaries for a user, newest-first. */
+export const listSearchSummaries = async (
+  client: PoolClient,
+  userId: string,
+): Promise<SearchSummary[]> => {
+  const { rows } = await client.query<{
+    search_id: string;
+    status: RequestStatus;
+    request: SearchRequest;
+    folder_id: string | null;
+    created_at_utc: Date;
+  }>(
+    `SELECT search_id, status, request, folder_id, created_at_utc
+     FROM searches
+     WHERE user_id = $1
+     ORDER BY created_at_utc DESC`,
+    [userId],
+  );
+  return rows.map((row) => ({
+    id: row.search_id,
+    status: row.status,
+    nickname: row.request.nickname,
+    address: row.request.address,
+    folderId: row.folder_id ?? undefined,
+    createdAt: row.created_at_utc.toISOString(),
+  }));
 };

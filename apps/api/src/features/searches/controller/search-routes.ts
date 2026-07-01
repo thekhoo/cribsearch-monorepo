@@ -7,6 +7,7 @@ import type {
 import { validateSearchRequest } from "../service/validate-search-request";
 import { createSearchRequest } from "../service/create-search-request";
 import { getSearchRequest } from "../service/get-search-request";
+import { listSearchesService } from "../service/list-searches";
 import { enqueueSearch } from "../../../shared/service/queue";
 import { requireUserId } from "../../../shared/http/require-user-id";
 
@@ -37,9 +38,24 @@ searchRouter.post("/", async (req, res, next) => {
   }
 });
 
+searchRouter.get("/", async (req, res, next) => {
+  try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
+    const summaries = await listSearchesService(userId);
+    res.status(200).json(summaries);
+  } catch (err) {
+    next(err);
+  }
+});
+
 searchRouter.get("/:id", async (req, res, next) => {
   try {
-    const view = await getSearchRequest(req.params.id ?? "");
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
+    const view = await getSearchRequest(req.params.id ?? "", userId);
 
     if (!view) {
       const error: ApiError = { error: "Not Found" };

@@ -13,9 +13,10 @@ export interface SearchRequestView {
 
 export const getSearchRequest = async (
   id: string,
+  userId: string,
 ): Promise<SearchRequestView | null> =>
   withTransaction(async (client) => {
-    const row = await getSearchRow(client, id);
+    const row = await getSearchRow(client, id, userId);
     if (!row) return null;
     const destinations = await getDestinations(client, id);
     const hasResult =

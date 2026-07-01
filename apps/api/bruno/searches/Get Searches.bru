@@ -1,17 +1,13 @@
 meta {
-  name: Get Search
+  name: Get Searches
   type: http
-  seq: 2
+  seq: 3
 }
 
 get {
-  url: {{baseUrl}}/cribsearch/v1/searches/:id
+  url: {{baseUrl}}/cribsearch/v1/searches
   body: none
   auth: none
-}
-
-params:path {
-  id: sr-1
 }
 
 headers {

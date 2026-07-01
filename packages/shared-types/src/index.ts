@@ -79,6 +79,15 @@ export interface Search {
   createdAt: string;
 }
 
+export interface SearchSummary {
+  id: string;
+  status: RequestStatus;
+  nickname?: string;
+  address: string;
+  folderId?: string;
+  createdAt: string;
+}
+
 // ── Async Search ───────────────────────────────────────────────────
 
 export type RequestStatus =
