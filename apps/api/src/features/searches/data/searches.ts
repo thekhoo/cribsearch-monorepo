@@ -13,12 +13,13 @@ export interface SearchRow {
 /** Insert a new search row with status='Pending'. Returns searchId and status. */
 export const insertSearch = async (
   client: PoolClient,
+  userId: string,
   request: SearchRequest,
 ): Promise<{ searchId: string; status: "Pending" }> => {
   const searchId = uuidv7();
   const { rows } = await client.query<{ search_id: string }>(
-    `INSERT INTO searches (search_id, status, request) VALUES ($1, 'Pending', $2) RETURNING search_id`,
-    [searchId, JSON.stringify(request)],
+    `INSERT INTO searches (search_id, user_id, status, request) VALUES ($1, $2, 'Pending', $3) RETURNING search_id`,
+    [searchId, userId, JSON.stringify(request)],
   );
   const row = rows[0];
   if (!row) {

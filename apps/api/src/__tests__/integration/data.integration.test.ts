@@ -6,6 +6,8 @@ import { searchToDestinationRows, rowsToSearch } from "../../features/searches/d
 import type { SearchRequest, Search } from "@cribsearch/shared-types";
 import { truncateAll } from "./db-helpers";
 
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
 const baseRequest: SearchRequest = {
   address: "123 Main St, Sydney",
   modes: ["walk"],
@@ -19,7 +21,7 @@ describe("data layer integration", () => {
 
   it("insertSearch then getSearchRow round-trips the request", async () => {
     const { searchId: id, status } = await withTransaction((client) =>
-      insertSearch(client, baseRequest),
+      insertSearch(client, DEV_USER_ID, baseRequest),
     );
 
     expect(status).toBe("Pending");
@@ -40,7 +42,7 @@ describe("data layer integration", () => {
 
   it("markProcessing flips status to Processing", async () => {
     const { searchId: id } = await withTransaction((client) =>
-      insertSearch(client, baseRequest),
+      insertSearch(client, DEV_USER_ID, baseRequest),
     );
 
     await withTransaction((client) => markProcessing(client, id));
@@ -51,7 +53,7 @@ describe("data layer integration", () => {
 
   it("updateResult + insertDestinations + getDestinations + rowsToSearch round-trips correctly", async () => {
     const { searchId: id } = await withTransaction((client) =>
-      insertSearch(client, baseRequest),
+      insertSearch(client, DEV_USER_ID, baseRequest),
     );
     await withTransaction((client) => markProcessing(client, id));
 

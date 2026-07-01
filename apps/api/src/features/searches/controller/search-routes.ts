@@ -8,11 +8,15 @@ import { validateSearchRequest } from "../service/validate-search-request";
 import { createSearchRequest } from "../service/create-search-request";
 import { getSearchRequest } from "../service/get-search-request";
 import { enqueueSearch } from "../../../shared/service/queue";
+import { requireUserId } from "../../../shared/http/require-user-id";
 
 export const searchRouter: Router = Router();
 
 searchRouter.post("/", async (req, res, next) => {
   try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
     const body = req.body as SearchRequest;
     const validation = validateSearchRequest(body);
 
@@ -22,7 +26,7 @@ searchRouter.post("/", async (req, res, next) => {
       return;
     }
 
-    const { id, status } = await createSearchRequest(body);
+    const { id, status } = await createSearchRequest(userId, body);
     await enqueueSearch({ ...body, searchRequestId: id });
 
     const response: SearchResponse = { id, status };

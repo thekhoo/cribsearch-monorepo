@@ -7,6 +7,8 @@ import type { SearchMessage, SearchRequest } from "@cribsearch/shared-types";
 import { maps } from "../../shared/maps";
 import { truncateAll } from "./db-helpers";
 
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
 const baseBody: SearchRequest = {
   address: "123 Main St, Sydney",
   modes: ["walk"],
@@ -16,7 +18,7 @@ const baseBody: SearchRequest = {
 
 /** Insert a pending row and return its id. */
 const insertPending = async (): Promise<string> => {
-  const { searchId: id } = await withTransaction((client) => insertSearch(client, baseBody));
+  const { searchId: id } = await withTransaction((client) => insertSearch(client, DEV_USER_ID, baseBody));
   return id;
 };
 
@@ -107,7 +109,7 @@ describe("worker integration", () => {
       pois: [],
     };
     const { searchId: id } = await withTransaction((client) =>
-      insertSearch(client, requestNoPois),
+      insertSearch(client, DEV_USER_ID, requestNoPois),
     );
     const msg: SearchMessage = { ...requestNoPois, searchRequestId: id };
 

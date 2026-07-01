@@ -9,6 +9,8 @@ import type { SearchRequest, SearchResponse } from "@cribsearch/shared-types";
 
 const app = createApp();
 
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
 const validBody: SearchRequest = {
   address: "123 Main St, Sydney",
   modes: ["walk"],
@@ -22,9 +24,18 @@ describe("api integration", () => {
     await truncateAll();
   });
 
+  it("POST without x-user-id → 400 user is required", async () => {
+    const res = await request(app)
+      .post("/cribsearch/v1/searches")
+      .send(validBody)
+      .expect(400);
+    expect((res.body as { error: string }).error).toMatch(/user is required/i);
+  });
+
   it("POST valid body → 202 with id and Pending status; Pending row exists in DB", async () => {
     const res = await request(app)
       .post("/cribsearch/v1/searches")
+      .set("x-user-id", DEV_USER_ID)
       .send(validBody)
       .expect(202);
 
@@ -42,6 +53,7 @@ describe("api integration", () => {
   it("POST invalid body → 400 with error", async () => {
     const res = await request(app)
       .post("/cribsearch/v1/searches")
+      .set("x-user-id", DEV_USER_ID)
       .send({ address: "", modes: [], amenityCategories: [], pois: [] })
       .expect(400);
 
@@ -66,6 +78,7 @@ describe("api integration", () => {
     // POST to create
     const postRes = await request(app)
       .post("/cribsearch/v1/searches")
+      .set("x-user-id", DEV_USER_ID)
       .send(validBody)
       .expect(202);
 
@@ -93,6 +106,7 @@ describe("api integration", () => {
 
     const postRes = await request(app)
       .post("/cribsearch/v1/searches")
+      .set("x-user-id", DEV_USER_ID)
       .send(validBody)
       .expect(202);
 
