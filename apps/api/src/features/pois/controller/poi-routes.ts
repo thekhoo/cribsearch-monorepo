@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { ApiError, CreatePoiRequest, UpdatePoiRequest } from "@cribsearch/shared-types";
 import { MapsError } from "../../../shared/maps";
+import { requireUserId } from "../../../shared/http/require-user-id";
 import { validatePoiRequest } from "../service/validate-poi-request";
 import { createPoi } from "../service/create-poi";
 import { updatePoiService } from "../service/update-poi";
@@ -17,18 +18,6 @@ const mapsErrorToResponse = (
     return { status: 503, error: "geocoding service temporarily unavailable" };
   }
   return { status: 400, error: `geocode failed: ${err.message}` };
-};
-
-const requireUserId = (
-  req: { userId?: string },
-  res: { status: (n: number) => { json: (b: unknown) => void } },
-): string | null => {
-  if (!req.userId || !req.userId.trim()) {
-    const body: ApiError = { error: "user is required" };
-    res.status(400).json(body);
-    return null;
-  }
-  return req.userId;
 };
 
 poiRouter.get("/", async (req, res, next) => {
