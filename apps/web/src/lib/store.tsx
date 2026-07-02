@@ -13,13 +13,14 @@ import type {
   CreatePoiRequest,
   Folder,
   Poi,
-  Search,
+  SearchSummary,
   UpdatePoiRequest,
 } from "@cribsearch/shared-types";
 import * as api from "./api";
 
 interface StoreActions {
-  addSearch: (search: Search) => void;
+  /** Prepend a just-completed search (as a summary) so History reflects it without a reload. */
+  addSearch: (search: SearchSummary) => void;
   deleteSearch: (id: string) => void;
   moveSearchToFolder: (searchId: string, folderId: string | undefined) => void;
 
@@ -36,7 +37,7 @@ interface StoreActions {
 }
 
 interface StoreState {
-  searches: Search[];
+  searches: SearchSummary[];
   pois: Poi[];
   folders: Folder[];
 }
@@ -46,26 +47,37 @@ type Store = StoreState & StoreActions;
 const StoreContext = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [searches, setSearches] = useState<Search[]>([]);
+  const [searches, setSearches] = useState<SearchSummary[]>([]);
   const [pois, setPois] = useState<Poi[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
 
-  // Hydrate POIs from the API on mount. On failure, log the error and keep an
-  // empty list so the rest of the UI remains functional.
+  // Hydrate POIs and search History from the API on mount. On failure, log the
+  // error and keep an empty list so the rest of the UI remains functional.
   useEffect(() => {
     api
       .listPois()
       .then((data) => setPois(data))
       .catch((err: unknown) => {
         console.error(
-          "Failed to load POIs:",
+          "Failed to load Places of Interest:",
+          err instanceof Error ? err.message : err,
+        );
+      });
+
+    api
+      .listSearches()
+      .then((data) => setSearches(data))
+      .catch((err: unknown) => {
+        console.error(
+          "Failed to load search history:",
           err instanceof Error ? err.message : err,
         );
       });
   }, []);
 
   const addSearch = useCallback(
-    (search: Search) => setSearches((prev) => [search, ...prev]),
+    (search: SearchSummary) =>
+      setSearches((prev) => [search, ...prev.filter((s) => s.id !== search.id)]),
     [],
   );
   const deleteSearch = useCallback(

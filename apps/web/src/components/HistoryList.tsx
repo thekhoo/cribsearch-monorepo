@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import type { Search } from "@cribsearch/shared-types";
+import { useEffect, useState } from "react";
+import type { SearchResponse, SearchSummary } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
+import { getSearch } from "../lib/api";
+import { STATUS_META } from "../lib/format";
 import ResultsView from "./ResultsView";
 import EmptyState from "./EmptyState";
+import Spinner from "./Spinner";
 
 interface HistoryListProps {
-  filteredSearches: Search[];
+  filteredSearches: SearchSummary[];
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   maxCompare: number;
+}
+
+/** A search can only be opened for results / compared once it has a result. */
+function hasResult(summary: SearchSummary): boolean {
+  return summary.status === "Complete" || summary.status === "PartialFailure";
 }
 
 export default function HistoryList({
@@ -21,14 +29,48 @@ export default function HistoryList({
 }: HistoryListProps) {
   const { deleteSearch, moveSearchToFolder, folders } = useStore();
   const [openSearchId, setOpenSearchId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<SearchResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
-  const openSearch = filteredSearches.find((s) => s.id === openSearchId);
+  const openSummary = filteredSearches.find((s) => s.id === openSearchId);
+
+  // Load full search detail (amenity groups + POIs) on demand when one is opened.
+  useEffect(() => {
+    if (openSearchId === null) {
+      setDetail(null);
+      setDetailError(null);
+      return;
+    }
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(null);
+    setDetail(null);
+    getSearch(openSearchId)
+      .then((res) => {
+        if (!cancelled) setDetail(res);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setDetailError(
+            err instanceof Error ? err.message : "Failed to load search",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openSearchId]);
 
   if (filteredSearches.length === 0) {
     return <EmptyState message="No Searches to show." />;
   }
 
-  if (openSearch) {
+  if (openSummary) {
+    const status = STATUS_META[openSummary.status];
     return (
       <div className="space-y-4">
         <button
@@ -39,13 +81,26 @@ export default function HistoryList({
         </button>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-1 text-xl font-semibold">
-            {openSearch.nickname ?? openSearch.address}
+            {openSummary.nickname ?? openSummary.address}
           </h2>
           <p className="mb-4 text-sm text-gray-500">
-            {new Date(openSearch.createdAt).toLocaleDateString()} ·{" "}
-            {openSearch.address}
+            {new Date(openSummary.createdAt).toLocaleDateString()} ·{" "}
+            {openSummary.address}
           </p>
-          <ResultsView search={openSearch} />
+          {detailLoading && <Spinner />}
+          {detailError && <p className="text-sm text-red-600">{detailError}</p>}
+          {!detailLoading &&
+            !detailError &&
+            detail &&
+            (detail.search ? (
+              <ResultsView search={detail.search} />
+            ) : (
+              <p className="text-sm text-gray-500">
+                {detail.status === "Failed"
+                  ? `This search failed${detail.error ? `: ${detail.error}` : "."}`
+                  : `This search is ${status.label.toLowerCase()} — no results yet.`}
+              </p>
+            ))}
         </div>
       </div>
     );
@@ -55,7 +110,10 @@ export default function HistoryList({
     <div className="space-y-2">
       {filteredSearches.map((search) => {
         const isSelected = selectedIds.includes(search.id);
-        const canSelect = isSelected || selectedIds.length < maxCompare;
+        const selectable = hasResult(search);
+        const canSelect =
+          selectable && (isSelected || selectedIds.length < maxCompare);
+        const status = STATUS_META[search.status];
         return (
           <div
             key={search.id}
@@ -68,9 +126,11 @@ export default function HistoryList({
               onChange={() => onToggleSelect(search.id)}
               className="h-4 w-4 rounded border-gray-300 accent-gray-900"
               title={
-                canSelect
-                  ? "Select for comparison"
-                  : `Max ${maxCompare} Searches for compare`
+                !selectable
+                  ? "Only completed Searches can be compared"
+                  : canSelect
+                    ? "Select for comparison"
+                    : `Max ${maxCompare} Searches for compare`
               }
             />
             <button
@@ -80,23 +140,20 @@ export default function HistoryList({
               <p className="truncate font-medium text-gray-900">
                 {search.nickname ?? search.address}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="truncate text-sm text-gray-500">
                 {new Date(search.createdAt).toLocaleDateString()} ·{" "}
-                {search.modes.length} mode
-                {search.modes.length !== 1 && "s"} ·{" "}
-                {search.amenityCategories.length} categor
-                {search.amenityCategories.length === 1 ? "y" : "ies"}
-                {search.pois.length > 0 &&
-                  ` · ${search.pois.length} POI${search.pois.length !== 1 ? "s" : ""}`}
+                {search.address}
               </p>
             </button>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${status.badgeClass}`}
+            >
+              {status.label}
+            </span>
             <select
               value={search.folderId ?? ""}
               onChange={(e) =>
-                moveSearchToFolder(
-                  search.id,
-                  e.target.value || undefined,
-                )
+                moveSearchToFolder(search.id, e.target.value || undefined)
               }
               className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600"
             >

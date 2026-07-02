@@ -26,7 +26,9 @@ export default function PoiManager() {
       setAddLabel("Work");
       setAddAddress("");
     } catch (err) {
-      setAddError(err instanceof Error ? err.message : "Failed to add POI");
+      setAddError(
+        err instanceof Error ? err.message : "Failed to add place of interest",
+      );
     } finally {
       setIsAdding(false);
     }
@@ -58,7 +60,7 @@ export default function PoiManager() {
       setEditingId(null);
     } catch (err) {
       setEditError(
-        err instanceof Error ? err.message : "Failed to update POI",
+        err instanceof Error ? err.message : "Failed to update place of interest",
       );
     } finally {
       setIsSaving(false);
@@ -77,7 +79,7 @@ export default function PoiManager() {
       await deletePoi(id);
     } catch (err) {
       setDeleteError(
-        err instanceof Error ? err.message : "Failed to delete POI",
+        err instanceof Error ? err.message : "Failed to delete place of interest",
       );
     } finally {
       setDeletingId(null);
@@ -89,7 +91,7 @@ export default function PoiManager() {
       {/* Add form */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Add POI
+          Add Place of Interest
         </h2>
         <div className="flex flex-wrap items-end gap-3">
           <div>
@@ -138,7 +140,7 @@ export default function PoiManager() {
       )}
 
       {pois.length === 0 ? (
-        <EmptyState message="No POIs yet. Add one above to get started." />
+        <EmptyState message="No places of interest yet. Add one above to get started." />
       ) : (
         <div className="space-y-2">
           {pois.map((poi) =>

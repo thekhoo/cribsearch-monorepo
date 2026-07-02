@@ -54,7 +54,15 @@ export default function SearchForm() {
         amenityCategories: categories,
       };
 
-      addSearch(search);
+      // Reflect the new search in History (as a summary) without a reload.
+      addSearch({
+        id: search.id,
+        status: partialFailure ? "PartialFailure" : "Complete",
+        nickname: search.nickname,
+        address: search.address,
+        folderId: search.folderId,
+        createdAt: search.createdAt,
+      });
       setResult(search);
       setWarning(partialFailure ?? null);
     } catch (err) {
@@ -86,7 +94,11 @@ export default function SearchForm() {
               {result.amenityCategories.length} categor
               {result.amenityCategories.length === 1 ? "y" : "ies"}
               {result.pois.length > 0 &&
-                ` · ${result.pois.length} POI${result.pois.length !== 1 ? "s" : ""}`}
+                ` · ${result.pois.length} ${
+                  result.pois.length === 1
+                    ? "place of interest"
+                    : "places of interest"
+                }`}
             </p>
           </div>
           <button
@@ -119,8 +131,8 @@ export default function SearchForm() {
       </div>
 
       <ModeSelector selected={modes} onChange={setModes} />
-      <AmenityCategorySelector selected={categories} onChange={setCategories} />
       <PoiAttachList attachedIds={attachedPoiIds} onChange={setAttachedPoiIds} />
+      <AmenityCategorySelector selected={categories} onChange={setCategories} />
 
       {loading && <Spinner />}
 
@@ -138,7 +150,7 @@ export default function SearchForm() {
 
       {!hasDestination && address.trim().length > 0 && modes.length >= 1 && (
         <p className="text-center text-sm text-amber-600">
-          Select at least one amenity category or attach a POI.
+          Select at least one amenity category or attach a place of interest.
         </p>
       )}
     </form>
