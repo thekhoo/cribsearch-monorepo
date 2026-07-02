@@ -42,7 +42,9 @@ export default function PoiAttachList({
       setQuickAddress("");
       setShowQuickAdd(false);
     } catch (err) {
-      setAddError(err instanceof Error ? err.message : "Failed to add POI");
+      setAddError(
+        err instanceof Error ? err.message : "Failed to add place of interest",
+      );
     } finally {
       setIsAdding(false);
     }
@@ -51,11 +53,11 @@ export default function PoiAttachList({
   return (
     <div>
       <label className="mb-1 block text-sm font-medium text-gray-700">
-        Your POIs
+        Places of Interest
       </label>
       {pois.length === 0 && !showQuickAdd && (
         <p className="text-sm text-gray-500">
-          No POIs yet.{" "}
+          No places of interest yet.{" "}
           <button
             type="button"
             onClick={() => setShowQuickAdd(true)}
@@ -90,7 +92,7 @@ export default function PoiAttachList({
               onClick={() => setShowQuickAdd(true)}
               className="rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700"
             >
-              + Add POI
+              + Add place
             </button>
           )}
         </div>
