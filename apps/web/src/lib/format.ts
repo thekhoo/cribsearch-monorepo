@@ -1,5 +1,7 @@
 import type {
   AmenityCategory,
+  Price,
+  PricePeriod,
   RequestStatus,
   TransportMode,
 } from "@cribsearch/shared-types";
@@ -32,6 +34,50 @@ export const STATUS_META: Record<
   },
   Failed: { label: "Failed", badgeClass: "bg-red-100 text-red-700" },
 };
+
+/** Friendly labels for the price period select. */
+export const PERIOD_OPTIONS: { value: PricePeriod; label: string }[] = [
+  { value: "pd", label: "per day (pd)" },
+  { value: "pw", label: "per week (pw)" },
+  { value: "pcm", label: "per calendar month (pcm)" },
+  { value: "pa", label: "per annum (pa)" },
+];
+
+/**
+ * Format a Price into a human-readable string, e.g. "€1,500 pcm".
+ * Returns null when there is no amount (no chip should be shown).
+ */
+export function formatPrice(price?: Price): string | null {
+  if (price?.amount == null) return null;
+
+  let formatted: string;
+  if (price.currency) {
+    try {
+      formatted = new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: price.currency,
+        maximumFractionDigits: 0,
+      }).format(price.amount);
+    } catch {
+      formatted =
+        new Intl.NumberFormat(undefined, {
+          maximumFractionDigits: 0,
+        }).format(price.amount) +
+        " " +
+        price.currency;
+    }
+  } else {
+    formatted = new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: 0,
+    }).format(price.amount);
+  }
+
+  if (price.period) {
+    formatted += ` ${price.period}`;
+  }
+
+  return formatted;
+}
 
 /** Formats a travel duration given in seconds, e.g. "5 min", "<1 min". */
 export function formatDuration(seconds: number): string {

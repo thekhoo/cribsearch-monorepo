@@ -13,8 +13,10 @@ import type {
   CreatePoiRequest,
   Folder,
   Poi,
+  Search,
   SearchSummary,
   UpdatePoiRequest,
+  UpdateSearchAnnotationRequest,
 } from "@cribsearch/shared-types";
 import * as api from "./api";
 
@@ -30,6 +32,12 @@ interface StoreActions {
   updatePoi: (id: string, input: UpdatePoiRequest) => Promise<Poi>;
   /** Deletes a POI via the API and removes it from local state. */
   deletePoi: (id: string) => Promise<void>;
+
+  /** Updates a search's annotation fields via the API and syncs the local summary. */
+  updateSearchAnnotation: (
+    id: string,
+    annotation: UpdateSearchAnnotationRequest,
+  ) => Promise<Search>;
 
   addFolder: (folder: Folder) => void;
   renameFolder: (id: string, name: string) => void;
@@ -115,6 +123,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPois((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
+  const updateSearchAnnotation = useCallback(
+    async (id: string, annotation: UpdateSearchAnnotationRequest): Promise<Search> => {
+      const res = await api.updateSearch(id, annotation);
+      if (!res.search) throw new Error("Search update returned no result");
+      const updated = res.search;
+      setSearches((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                searchName: updated.searchName,
+                price: updated.propertyDetails?.price,
+              }
+            : s,
+        ),
+      );
+      return updated;
+    },
+    [],
+  );
+
   const addFolder = useCallback(
     (folder: Folder) => setFolders((prev) => [...prev, folder]),
     [],
@@ -150,6 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addPoi,
       updatePoi,
       deletePoi,
+      updateSearchAnnotation,
       addFolder,
       renameFolder,
       deleteFolder,
@@ -165,6 +195,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addPoi,
       updatePoi,
       deletePoi,
+      updateSearchAnnotation,
       addFolder,
       renameFolder,
       deleteFolder,

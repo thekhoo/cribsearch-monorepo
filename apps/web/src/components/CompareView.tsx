@@ -34,7 +34,7 @@ export default function CompareView({ searches, onClose }: CompareViewProps) {
             className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
           >
             <h3 className="mb-1 truncate font-semibold">
-              {search.nickname ?? search.address}
+              {search.searchName ?? search.address}
             </h3>
             <p className="mb-3 text-xs text-gray-500">
               {new Date(search.createdAt).toLocaleDateString()} ·{" "}

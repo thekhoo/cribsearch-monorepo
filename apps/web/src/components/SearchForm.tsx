@@ -9,6 +9,7 @@ import AmenityCategorySelector from "./AmenityCategorySelector";
 import PoiAttachList from "./PoiAttachList";
 import Spinner from "./Spinner";
 import ResultsView from "./ResultsView";
+import PropertyDetailsPanel from "./PropertyDetailsPanel";
 
 export default function SearchForm() {
   const { pois, addSearch } = useStore();
@@ -58,7 +59,7 @@ export default function SearchForm() {
       addSearch({
         id: search.id,
         status: partialFailure ? "PartialFailure" : "Complete",
-        nickname: search.nickname,
+        searchName: search.searchName,
         address: search.address,
         folderId: search.folderId,
         createdAt: search.createdAt,
@@ -88,7 +89,12 @@ export default function SearchForm() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">{result.address}</h2>
+            <h2 className="text-xl font-semibold">
+              {result.searchName ?? result.address}
+            </h2>
+            {result.searchName && (
+              <p className="text-xs text-gray-400">{result.address}</p>
+            )}
             <p className="text-sm text-gray-500">
               {result.modes.length} mode{result.modes.length !== 1 && "s"} ·{" "}
               {result.amenityCategories.length} categor
@@ -109,6 +115,7 @@ export default function SearchForm() {
           </button>
         </div>
         {warning && <p className="text-sm text-amber-600">{warning}</p>}
+        <PropertyDetailsPanel search={result} onUpdated={setResult} />
         <ResultsView search={result} />
       </div>
     );
