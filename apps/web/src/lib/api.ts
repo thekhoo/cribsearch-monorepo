@@ -213,3 +213,20 @@ export async function listSearches(): Promise<SearchSummary[]> {
   }
   return response.json() as Promise<SearchSummary[]>;
 }
+
+/**
+ * Fetch a single search by id (full detail incl. amenity groups + POIs) for the
+ * hardcoded user. Returns the response envelope so callers can handle in-flight
+ * (Pending/Processing) and Failed states, not just completed results.
+ */
+export async function getSearch(id: string): Promise<SearchResponse> {
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/cribsearch/v1/searches/${id}`,
+    { headers: { "x-user-id": HARDCODED_USER_ID } },
+  );
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(`Failed to load search: ${message}`);
+  }
+  return response.json() as Promise<SearchResponse>;
+}

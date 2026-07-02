@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { Search } from "@cribsearch/shared-types";
 import { useStore } from "../../lib/store";
+import { getSearch } from "../../lib/api";
 import FolderSidebar from "../../components/FolderSidebar";
 import HistoryList from "../../components/HistoryList";
 import CompareView from "../../components/CompareView";
 import EmptyState from "../../components/EmptyState";
+import Spinner from "../../components/Spinner";
 
 const MAX_COMPARE = 3;
 
@@ -14,6 +17,8 @@ export default function HistoryPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
+  const [compareData, setCompareData] = useState<Search[] | null>(null);
+  const [compareError, setCompareError] = useState<string | null>(null);
 
   const filteredSearches = useMemo(() => {
     if (activeFolderId === null) return searches;
@@ -23,10 +28,36 @@ export default function HistoryPage() {
     return searches.filter((s) => s.folderId === activeFolderId);
   }, [searches, activeFolderId]);
 
-  const compareSearches = useMemo(
-    () => searches.filter((s) => selectedIds.includes(s.id)),
-    [searches, selectedIds],
-  );
+  // Summaries don't carry the full result, so fetch each selected Search's
+  // detail on demand when the user enters compare mode.
+  useEffect(() => {
+    if (!comparing) {
+      setCompareData(null);
+      setCompareError(null);
+      return;
+    }
+    let cancelled = false;
+    setCompareData(null);
+    setCompareError(null);
+    Promise.all(selectedIds.map((id) => getSearch(id)))
+      .then((responses) => {
+        if (cancelled) return;
+        const full = responses
+          .map((r) => r.search)
+          .filter((s): s is Search => s != null);
+        setCompareData(full);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setCompareError(
+            err instanceof Error ? err.message : "Failed to load Searches",
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [comparing, selectedIds]);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) =>
@@ -43,13 +74,20 @@ export default function HistoryPage() {
     );
   }
 
-  if (comparing && compareSearches.length >= 2) {
+  if (comparing && selectedIds.length >= 2) {
     return (
       <main className="mx-auto max-w-5xl px-6 py-12">
-        <CompareView
-          searches={compareSearches}
-          onClose={() => setComparing(false)}
-        />
+        {compareError && (
+          <p className="mb-4 text-sm text-red-600">{compareError}</p>
+        )}
+        {compareData === null && !compareError ? (
+          <Spinner />
+        ) : (
+          <CompareView
+            searches={compareData ?? []}
+            onClose={() => setComparing(false)}
+          />
+        )}
       </main>
     );
   }
