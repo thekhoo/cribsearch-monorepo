@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { withTransaction } from "../../shared/db/with-transaction";
-import { insertSearch, getSearchRow } from "../../features/journey/data/searches";
-import { processJourneyRequest } from "../../features/journey/service/process-journey-request";
-import { getJourneyRequest } from "../../features/journey/service/get-journey-request";
-import type { JourneySearchMessage, JourneySearchRequest } from "@cribsearch/shared-types";
+import { insertSearch, getSearchRow } from "../../features/searches/data/searches";
+import { processSearchRequest } from "../../features/searches/service/process-search-request";
+import { getSearchRequest } from "../../features/searches/service/get-search-request";
+import type { SearchMessage, SearchRequest } from "@cribsearch/shared-types";
 import { maps } from "../../shared/maps";
 import { truncateAll } from "./db-helpers";
 
-const baseBody: JourneySearchRequest = {
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+const baseBody: SearchRequest = {
   address: "123 Main St, Sydney",
   modes: ["walk"],
   amenityCategories: ["supermarket"],
@@ -16,14 +18,14 @@ const baseBody: JourneySearchRequest = {
 
 /** Insert a pending row and return its id. */
 const insertPending = async (): Promise<string> => {
-  const { searchId: id } = await withTransaction((client) => insertSearch(client, baseBody));
+  const { searchId: id } = await withTransaction((client) => insertSearch(client, DEV_USER_ID, baseBody));
   return id;
 };
 
 /** Build a full message from a pending id. */
-const buildMsg = (id: string): JourneySearchMessage => ({
+const buildMsg = (id: string): SearchMessage => ({
   ...baseBody,
-  journeyRequestId: id,
+  searchRequestId: id,
 });
 
 describe("worker integration", () => {
@@ -34,9 +36,9 @@ describe("worker integration", () => {
 
   it("happy path → status Complete, search defined, amenityGroups present, one poi", async () => {
     const id = await insertPending();
-    await processJourneyRequest(buildMsg(id));
+    await processSearchRequest(buildMsg(id));
 
-    const view = await getJourneyRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Complete");
     expect(view!.search).toBeDefined();
@@ -50,9 +52,9 @@ describe("worker integration", () => {
   it("permanent amenity failure → status Failed, error matches /address not found/i, no search", async () => {
     maps.forceAmenityFailure("permanent");
     const id = await insertPending();
-    await processJourneyRequest(buildMsg(id));
+    await processSearchRequest(buildMsg(id));
 
-    const view = await getJourneyRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Failed");
     expect(view!.search).toBeUndefined();
@@ -62,9 +64,9 @@ describe("worker integration", () => {
   it("failing poi address → status PartialFailure, search defined, pois empty, amenityGroups present, error defined", async () => {
     maps.addFailingAddress("456 Office St");
     const id = await insertPending();
-    await processJourneyRequest(buildMsg(id));
+    await processSearchRequest(buildMsg(id));
 
-    const view = await getJourneyRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("PartialFailure");
     expect(view!.search).toBeDefined();
@@ -73,11 +75,11 @@ describe("worker integration", () => {
     expect(view!.error).toBeDefined();
   });
 
-  it("transient amenity failure → processJourneyRequest rejects with /provider timeout/, row stays Processing", async () => {
+  it("transient amenity failure → processSearchRequest rejects with /provider timeout/, row stays Processing", async () => {
     maps.forceAmenityFailure("transient");
     const id = await insertPending();
 
-    await expect(processJourneyRequest(buildMsg(id))).rejects.toThrow(
+    await expect(processSearchRequest(buildMsg(id))).rejects.toThrow(
       /provider timeout/i,
     );
 
@@ -85,35 +87,35 @@ describe("worker integration", () => {
     expect(row!.status).toBe("Processing");
   });
 
-  it("already-terminal row → processJourneyRequest is a no-op, status stays Complete", async () => {
+  it("already-terminal row → processSearchRequest is a no-op, status stays Complete", async () => {
     const id = await insertPending();
     // First process to get to Complete
-    await processJourneyRequest(buildMsg(id));
+    await processSearchRequest(buildMsg(id));
 
-    const viewBefore = await getJourneyRequest(id);
+    const viewBefore = await getSearchRequest(id, DEV_USER_ID);
     expect(viewBefore!.status).toBe("Complete");
 
     // Force a failure on a second call — if it were not a no-op it would flip status
     maps.forceAmenityFailure("permanent");
-    await processJourneyRequest(buildMsg(id));
+    await processSearchRequest(buildMsg(id));
 
-    const viewAfter = await getJourneyRequest(id);
+    const viewAfter = await getSearchRequest(id, DEV_USER_ID);
     expect(viewAfter!.status).toBe("Complete");
   });
 
   it("request with pois:[] → Complete, pois empty, amenityGroups present", async () => {
-    const requestNoPois: JourneySearchRequest = {
+    const requestNoPois: SearchRequest = {
       ...baseBody,
       pois: [],
     };
     const { searchId: id } = await withTransaction((client) =>
-      insertSearch(client, requestNoPois),
+      insertSearch(client, DEV_USER_ID, requestNoPois),
     );
-    const msg: JourneySearchMessage = { ...requestNoPois, journeyRequestId: id };
+    const msg: SearchMessage = { ...requestNoPois, searchRequestId: id };
 
-    await processJourneyRequest(msg);
+    await processSearchRequest(msg);
 
-    const view = await getJourneyRequest(id);
+    const view = await getSearchRequest(id, DEV_USER_ID);
     expect(view).not.toBeNull();
     expect(view!.status).toBe("Complete");
     expect(view!.search!.pois).toHaveLength(0);
@@ -124,7 +126,7 @@ describe("worker integration", () => {
     maps.forceTravelStatsFailure("transient");
     const id = await insertPending();
 
-    await expect(processJourneyRequest(buildMsg(id))).rejects.toThrow(
+    await expect(processSearchRequest(buildMsg(id))).rejects.toThrow(
       /provider timeout/i,
     );
 

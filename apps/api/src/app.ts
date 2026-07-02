@@ -5,7 +5,7 @@ import { logger, serializeError, type Logger } from "@cribsearch/logger";
 import type { ApiError } from "@cribsearch/shared-types";
 import { env } from "./shared/config/env";
 import { healthRouter } from "./routes/health";
-import { journeyRouter } from "./features/journey/controller/journey-routes";
+import { searchRouter } from "./features/searches/controller/search-routes";
 import { poiRouter } from "./features/pois/controller/poi-routes";
 
 export const createApp = (): Express => {
@@ -38,7 +38,7 @@ export const createApp = (): Express => {
 
   // v1 routes
   app.use("/cribsearch/v1/health", healthRouter);
-  app.use("/cribsearch/v1/journey", journeyRouter);
+  app.use("/cribsearch/v1/searches", searchRouter);
   app.use("/cribsearch/v1/pois", poiRouter);
 
   // 404 fallback

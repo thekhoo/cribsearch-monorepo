@@ -37,7 +37,7 @@ const nodeEnv = process.env.NODE_ENV ?? "development";
 export const env = {
   nodeEnv,
   port: Number(process.env.PORT ?? 3001),
-  journeyQueueUrl: process.env.JOURNEY_QUEUE_URL ?? "",
+  searchQueueUrl: process.env.SEARCH_QUEUE_URL ?? "",
   logLevel: process.env.LOG_LEVEL ?? "info",
   /**
    * Comma-separated list of allowed CORS origins.

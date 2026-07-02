@@ -1,8 +1,9 @@
 import type {
   AmenityCategory,
   CreatePoiRequest,
-  JourneySearchRequest,
-  JourneySearchResponse,
+  SearchRequest,
+  SearchResponse,
+  SearchSummary,
   Poi,
   RequestStatus,
   Search,
@@ -60,23 +61,26 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
 }
 
 /**
- * Submit an async journey search to the API and poll until a terminal status
+ * Submit an async search to the API and poll until a terminal status
  * is reached, then return the completed Search.
  *
  * Throws on non-202 POST responses, poll failures, "Failed" status, or timeout.
  * Returns { search } on Complete, { search, partialFailure } on PartialFailure.
  */
 export async function runSearch(input: SearchInput): Promise<SearchResult> {
-  const requestBody: JourneySearchRequest = {
+  const requestBody: SearchRequest = {
     address: input.address,
     modes: input.modes,
     amenityCategories: input.amenityCategories,
     pois: input.attachedPois.map((p) => ({ label: p.label, address: p.address })),
   };
 
-  const postResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/journey`, {
+  const postResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": HARDCODED_USER_ID,
+    },
     body: JSON.stringify(requestBody),
   });
 
@@ -90,14 +94,17 @@ export async function runSearch(input: SearchInput): Promise<SearchResult> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    const pollResponse = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/journey/${id}`);
+    const pollResponse = await fetchWithTimeout(
+      `${API_BASE_URL}/cribsearch/v1/searches/${id}`,
+      { headers: { "x-user-id": HARDCODED_USER_ID } },
+    );
 
     if (!pollResponse.ok) {
       const message = await extractErrorMessage(pollResponse);
       throw new Error(`Failed to poll search status: ${message}`);
     }
 
-    const result = (await pollResponse.json()) as JourneySearchResponse;
+    const result = (await pollResponse.json()) as SearchResponse;
 
     if (!TERMINAL_STATUSES.has(result.status)) {
       continue;
@@ -191,4 +198,18 @@ export async function deletePoi(id: string): Promise<void> {
     const message = await extractErrorMessage(response);
     throw new Error(message);
   }
+}
+
+// ── Search history endpoints ───────────────────────────────────────
+
+/** List all searches for the hardcoded user (History), newest-first. */
+export async function listSearches(): Promise<SearchSummary[]> {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/cribsearch/v1/searches`, {
+    headers: { "x-user-id": HARDCODED_USER_ID },
+  });
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(`Failed to load search history: ${message}`);
+  }
+  return response.json() as Promise<SearchSummary[]>;
 }

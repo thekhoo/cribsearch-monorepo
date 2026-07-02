@@ -23,7 +23,7 @@ and is consumed by `apps/api`. The logger:
   `NODE_ENV=test` the Console transport is **silent** so tests are not noisy.
 - Provides **correlation**: HTTP requests get a `requestId` child logger via
   middleware (sourced from `x-request-id` / `x-amzn-trace-id`, falling back to
-  a UUID). The async pipeline correlates on `journeyRequestId`.
+  a UUID). The async pipeline correlates on `searchRequestId`.
 - **Deep-redacts** sensitive keys (`password`, `token`, `authorization`,
   `apiKey`, `supabaseServiceRoleKey`, etc.) before serialising.
 

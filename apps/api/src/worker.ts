@@ -3,9 +3,9 @@ import type {
   SQSBatchResponse,
   SQSHandler,
 } from "aws-lambda";
-import type { JourneySearchMessage } from "@cribsearch/shared-types";
+import type { SearchMessage } from "@cribsearch/shared-types";
 import { logger, serializeError } from "@cribsearch/logger";
-import { processJourneyRequest } from "./features/journey/service/process-journey-request";
+import { processSearchRequest } from "./features/searches/service/process-search-request";
 
 const log = logger.child({ component: "worker" });
 
@@ -14,11 +14,11 @@ export const handler: SQSHandler = async (event) => {
 
   for (const record of event.Records) {
     try {
-      const msg = JSON.parse(record.body) as JourneySearchMessage;
+      const msg = JSON.parse(record.body) as SearchMessage;
       log.info("processing message", {
-        journeyRequestId: msg.journeyRequestId,
+        searchRequestId: msg.searchRequestId,
       });
-      await processJourneyRequest(msg);
+      await processSearchRequest(msg);
     } catch (err) {
       log.error("failed to process record", {
         messageId: record.messageId,

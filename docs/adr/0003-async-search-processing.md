@@ -20,13 +20,13 @@ failing, costly work without blocking the caller.
 
 Accept Search submissions **asynchronously** and process them in the background.
 
-1. **Two functions, one queue.** `POST /cribsearch/v1/journey` (the existing
-   Express/API Lambda) validates a **Journey Search Request**, persists it as
+1. **Two functions, one queue.** `POST /cribsearch/v1/searches` (the existing
+   Express/API Lambda) validates a **Search Request**, persists it as
    `Pending`, enqueues it on an SQS queue, and returns **202 Accepted** with a
-   **Journey Search Response** in `Pending`. A **separate worker Lambda**
+   **Search Response** in `Pending`. A **separate worker Lambda**
    consumes the queue, flips the request to `Processing`, performs the maps work,
    and writes a terminal state. The caller polls
-   `GET /cribsearch/v1/journey/{id}`.
+   `GET /cribsearch/v1/searches/{id}`.
 
 2. **Request Status lifecycle.** `Pending → Processing →
    Complete | PartialFailure | Failed` (see `CONTEXT.md`). `PartialFailure`
@@ -34,10 +34,10 @@ Accept Search submissions **asynchronously** and process them in the background.
    usable result (e.g. the address could not be resolved).
 
 3. **Full payload on the queue.** The SQS message carries the whole submission
-   plus the `journeyRequestId`, so the worker needs no initial DB read.
+   plus the `searchRequestId`, so the worker needs no initial DB read.
 
 4. **Ports for the three side-effecting collaborators** —
-   `JourneyRequestRepository`, `JourneyQueue`, `MapsProvider` — injected at
+   `SearchRequestRepository`, `SearchQueue`, `MapsProvider` — injected at
    startup. On AWS: in-memory repo (dummy, for now), SQS queue, stub maps
    provider. Locally and in tests: in-memory repo, an **in-process** queue that
    runs the worker logic inline, stub maps provider.
@@ -45,7 +45,7 @@ Accept Search submissions **asynchronously** and process them in the background.
 5. **Reliability.** A dead-letter queue with `maxReceiveCount` 3; the worker
    **throws** on transient errors (provider 5xx/timeout/throttle) to let SQS
    redeliver, marks `Failed` on permanent errors, and `PartialFailure` on mixed
-   outcomes. Writes are idempotent (keyed by `journeyRequestId`) with a
+   outcomes. Writes are idempotent (keyed by `searchRequestId`) with a
    terminal-state short-circuit, and the SQS visibility timeout is set ≥ the
    Lambda timeout — together giving effectively-once processing under SQS's
    at-least-once delivery.
@@ -63,11 +63,11 @@ Accept Search submissions **asynchronously** and process them in the background.
 - **Known limitation (current slice):** the repository is an **in-memory dummy**.
   Each Lambda has its own process memory, so on AWS the worker's update is not
   visible to `GET` — the deployed round-trip will not complete until a real
-  shared store (Neon Postgres) is wired behind `JourneyRequestRepository`. Local dev
+  shared store (Neon Postgres) is wired behind `SearchRequestRepository`. Local dev
   and tests round-trip correctly because the in-process queue shares one memory.
 - **Deferred:** auto-flipping rows stuck in `Processing` after DLQ exhaustion (a
   reaper); retrying `Failed`/`PartialFailure` requests; the attach-by-id POI
-  library (requests carry POIs by value for now); `PUT /journey`.
+  library (requests carry POIs by value for now); `PUT /searches/{id}`.
 
 ## Revisit if
 

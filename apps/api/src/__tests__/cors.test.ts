@@ -27,7 +27,7 @@ describe("CORS middleware", () => {
 
   it("reflects allowed origin in an OPTIONS preflight response", async () => {
     const res = await request(app)
-      .options("/cribsearch/v1/journey")
+      .options("/cribsearch/v1/searches")
       .set("Origin", "https://cribsearch.app")
       .set("Access-Control-Request-Method", "POST");
 

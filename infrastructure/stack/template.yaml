@@ -32,18 +32,18 @@ Globals:
       repository: thekhoo/cribsearch-monorepo
 
 Resources:
-  JourneyDeadLetterQueue:
+  SearchDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub "${Environment}-cribsearch-journey-deadletter"
+      QueueName: !Sub "${Environment}-cribsearch-search-requests-deadletter"
 
-  JourneyQueue:
+  SearchQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub "${Environment}-cribsearch-journey"
+      QueueName: !Sub "${Environment}-cribsearch-search-requests"
       VisibilityTimeout: 60
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt JourneyDeadLetterQueue.Arn
+        deadLetterTargetArn: !GetAtt SearchDeadLetterQueue.Arn
         maxReceiveCount: 3
 
   ApiFunction:
@@ -56,11 +56,11 @@ Resources:
       Environment:
         Variables:
           NODE_ENV: production
-          JOURNEY_QUEUE_URL: !Ref JourneyQueue
+          SEARCH_QUEUE_URL: !Ref SearchQueue
           CORS_ALLOWED_ORIGINS: "https://cribsearch.vercel.app,https://cribsearch.app"
       Policies:
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt JourneyQueue.QueueName
+            QueueName: !GetAtt SearchQueue.QueueName
         - SSMParameterReadPolicy:
             ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
@@ -89,16 +89,16 @@ Resources:
           NODE_ENV: production
       Policies:
         - SQSPollerPolicy:
-            QueueName: !GetAtt JourneyQueue.QueueName
+            QueueName: !GetAtt SearchQueue.QueueName
         - SSMParameterReadPolicy:
             ParameterName: !Sub "${Environment}/cribsearch/service/*"
         - KMSDecryptPolicy:
             KeyId: alias/aws/ssm
       Events:
-        JourneyQueueEvent:
+        SearchQueueEvent:
           Type: SQS
           Properties:
-            Queue: !GetAtt JourneyQueue.Arn
+            Queue: !GetAtt SearchQueue.Arn
             BatchSize: 10
             MaximumBatchingWindowInSeconds: 30
             ScalingConfig:
@@ -110,6 +110,6 @@ Outputs:
   ApiBaseUrl:
     Description: Base URL for the deployed HTTP API.
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-  JourneyQueueUrl:
-    Description: URL of the Journey Search SQS queue.
-    Value: !Ref JourneyQueue
+  SearchQueueUrl:
+    Description: URL of the Search SQS queue.
+    Value: !Ref SearchQueue

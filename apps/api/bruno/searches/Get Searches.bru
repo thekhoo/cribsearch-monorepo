@@ -1,0 +1,15 @@
+meta {
+  name: Get Searches
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/cribsearch/v1/searches
+  body: none
+  auth: none
+}
+
+headers {
+  x-user-id: 00000000-0000-0000-0000-000000000001
+}

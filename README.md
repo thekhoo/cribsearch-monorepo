@@ -146,14 +146,15 @@ pnpm dev                      # runs web + api together (Turborepo)
 | Method | Path | Description |
 | ------ | ---- | ----------- |
 | `GET` | `/cribsearch/v1/health` | Health check |
-| `POST` | `/cribsearch/v1/journey` | Submit a Journey Search Request → `202 Accepted` |
-| `GET` | `/cribsearch/v1/journey/:id` | Poll for Journey Search Response |
-| `GET` | `/cribsearch/v1/pois` | List the current user's POIs |
-| `POST` | `/cribsearch/v1/pois` | Add a POI (geocodes the address) |
-| `PUT` | `/cribsearch/v1/pois/{poiId}` | Edit a POI (re-geocodes if the address changed) |
-| `DELETE` | `/cribsearch/v1/pois/{poiId}` | Delete a POI |
+| `POST` | `/cribsearch/v1/searches` | Submit a Search Request → `202 Accepted` (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/searches` | List the current user's searches (History), newest-first (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/searches/:id` | Poll for Search Response — user-scoped: 404 when not owned by the header user (requires `x-user-id`) |
+| `GET` | `/cribsearch/v1/pois` | List the current user's POIs (requires `x-user-id`) |
+| `POST` | `/cribsearch/v1/pois` | Add a POI (geocodes the address) (requires `x-user-id`) |
+| `PUT` | `/cribsearch/v1/pois/{poiId}` | Edit a POI (re-geocodes if the address changed) (requires `x-user-id`) |
+| `DELETE` | `/cribsearch/v1/pois/{poiId}` | Delete a POI (requires `x-user-id`) |
 
-> **Note:** The deployed `GET /journey/:id` round-trip does not yet reflect worker
+> **Note:** The deployed `GET /searches/:id` round-trip does not yet reflect worker
 > updates because the repository is an in-memory dummy (each Lambda has its own
 > memory). This will work once a real shared store replaces the dummy — see
 > [ADR 0003](docs/adr/0003-async-search-processing.md). Local dev and tests
@@ -205,8 +206,8 @@ rationale.
 ### What the API deploys
 
 Two Lambda functions: **ApiFunction** (Express behind an HTTP API) and
-**WorkerFunction** (SQS consumer). An SQS queue (`JourneyQueue`) connects them,
-with a dead-letter queue (`JourneyDeadLetterQueue`, `maxReceiveCount: 3`). The
+**WorkerFunction** (SQS consumer). An SQS queue (`SearchQueue`) connects them,
+with a dead-letter queue (`SearchDeadLetterQueue`, `maxReceiveCount: 3`). The
 SAM template (`infrastructure/stack/template.yaml`) is parameterised by `Environment`
 (`development | staging | production`); only `production` is wired today.
 
@@ -297,7 +298,7 @@ transport is silent.
 
 HTTP request logs carry a `requestId` (from `x-request-id` / `x-amzn-trace-id`
 or a generated UUID). The async processing pipeline correlates on
-`journeyRequestId`. See [ADR 0004](docs/adr/0004-structured-logging.md).
+`searchRequestId`. See [ADR 0004](docs/adr/0004-structured-logging.md).
 
 ## Conventions
 

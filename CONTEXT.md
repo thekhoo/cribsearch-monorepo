@@ -80,20 +80,22 @@ Only the selected modes are computed — modes the user did not ask for are not
 calculated, to avoid unnecessary cost. The chosen modes are saved with the
 Search, so each shown destination reports a Travel Stat per selected mode.
 
-### Journey Search Request
+### Search Request
 
 What the user **submits** to run a Search: the candidate address plus the
 upfront selection (modes, amenity categories, attached POIs) defined in ADR
-0002. Because computing the result means many slow, costly maps calls, a Journey
-Search Request is **accepted and processed asynchronously** rather than answered
+0002. Because computing the result means many slow, costly maps calls, a Search
+Request is **accepted and processed asynchronously** rather than answered
 in one round-trip — it is recorded as pending, worked in the background, and its
 outcome is retrieved separately. It is distinct from the durable **Search**: the
 request is the in-flight job, the Search is the completed result that lands in
 **History**.
 
-### Journey Search Response
+> Note: earlier drafts included a qualifier in this term's name. The qualifier has been dropped — the concept is unchanged.
 
-What the system **sends back** for a Journey Search Request: the current
+### Search Response
+
+What the system **sends back** for a Search Request: the current
 processing state and, once complete, the resulting **Search** (its amenities and
 travel stats). Before completion it reports progress without a result; on
 failure it reports why. It is the response contract, not a stored entity — the
@@ -101,7 +103,7 @@ durable record remains the **Search**.
 
 ### Request Status
 
-The lifecycle of a **Journey Search Request**:
+The lifecycle of a **Search Request**:
 
 - **Pending** — accepted and recorded, waiting to be picked up for processing.
 - **Processing** — actively being worked: the maps calls for the selected
