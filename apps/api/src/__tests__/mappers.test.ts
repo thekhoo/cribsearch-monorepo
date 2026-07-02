@@ -19,10 +19,11 @@ const baseSearchRow: SearchRow = {
     modes: ["walk", "transit"],
     amenityCategories: ["supermarket"],
     pois: [{ label: "Office", address: "2 Work St" }],
-    nickname: "My Search",
   },
   statusReason: null,
   createdAt: "2024-01-01T00:00:00.000Z",
+  searchName: null,
+  propertyDetails: {},
 };
 
 // ── travelStatsToColumns ─────────────────────────────────────────────────────
@@ -313,6 +314,8 @@ describe("rowsToSearch", () => {
       },
       statusReason: null,
       createdAt: search.createdAt,
+      searchName: null,
+      propertyDetails: {},
     };
 
     const result = rowsToSearch(searchRow, dbRows);
@@ -352,7 +355,7 @@ describe("rowsToSearch", () => {
     const original: Search = {
       id: "search-uuid-1",
       address: "1 Test St, Sydney",
-      nickname: "My Search",
+      searchName: "My Search",
       modes: ["walk", "transit"],
       amenityCategories: ["supermarket"],
       amenityGroups: [
@@ -390,17 +393,18 @@ describe("rowsToSearch", () => {
         modes: original.modes,
         amenityCategories: original.amenityCategories,
         pois: original.pois.map((p) => ({ label: p.label, address: p.address })),
-        nickname: original.nickname,
       },
       statusReason: null,
       createdAt: original.createdAt,
+      searchName: "My Search",
+      propertyDetails: {},
     };
 
     const reconstructed = rowsToSearch(searchRow, dbRows);
 
     // Top-level fields
     expect(reconstructed.id).toBe(original.id);
-    expect(reconstructed.nickname).toBe(original.nickname);
+    expect(reconstructed.searchName).toBe(original.searchName);
     expect(reconstructed.address).toBe(original.address);
     expect(reconstructed.modes).toEqual(original.modes);
     expect(reconstructed.amenityCategories).toEqual(original.amenityCategories);

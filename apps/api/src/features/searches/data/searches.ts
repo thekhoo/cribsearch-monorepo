@@ -3,6 +3,7 @@ import type {
   SearchRequest,
   RequestStatus,
   SearchSummary,
+  PropertyDetails,
 } from "@cribsearch/shared-types";
 import { uuidv7 } from "uuidv7";
 
@@ -12,6 +13,8 @@ export interface SearchRow {
   request: SearchRequest;
   statusReason: string | null;
   createdAt: string;
+  searchName: string | null;
+  propertyDetails: PropertyDetails;
 }
 
 /** Insert a new search row with status='Pending'. Returns searchId and status. */
@@ -69,16 +72,18 @@ export const getSearchRow = async (
     request: SearchRequest;
     status_reason: string | null;
     created_at_utc: Date;
+    search_name: string | null;
+    property_details: PropertyDetails;
   };
   try {
     const { rows } =
       userId === undefined
         ? await client.query<SearchRowRaw>(
-            `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1`,
+            `SELECT search_id, status, request, status_reason, created_at_utc, search_name, property_details FROM searches WHERE search_id=$1`,
             [id],
           )
         : await client.query<SearchRowRaw>(
-            `SELECT search_id, status, request, status_reason, created_at_utc FROM searches WHERE search_id=$1 AND user_id=$2`,
+            `SELECT search_id, status, request, status_reason, created_at_utc, search_name, property_details FROM searches WHERE search_id=$1 AND user_id=$2`,
             [id, userId],
           );
     const row = rows[0];
@@ -89,6 +94,8 @@ export const getSearchRow = async (
       request: row.request,
       statusReason: row.status_reason,
       createdAt: row.created_at_utc.toISOString(),
+      searchName: row.search_name,
+      propertyDetails: row.property_details,
     };
   } catch (err: unknown) {
     // Postgres error code 22P02 = invalid_text_representation (e.g. non-uuid id)
@@ -115,8 +122,10 @@ export const listSearchSummaries = async (
     request: SearchRequest;
     folder_id: string | null;
     created_at_utc: Date;
+    search_name: string | null;
+    property_details: PropertyDetails;
   }>(
-    `SELECT search_id, status, request, folder_id, created_at_utc
+    `SELECT search_id, status, request, folder_id, created_at_utc, search_name, property_details
      FROM searches
      WHERE user_id = $1
      ORDER BY created_at_utc DESC`,
@@ -125,9 +134,51 @@ export const listSearchSummaries = async (
   return rows.map((row) => ({
     id: row.search_id,
     status: row.status,
-    nickname: row.request.nickname,
+    searchName: row.search_name ?? undefined,
     address: row.request.address,
     folderId: row.folder_id ?? undefined,
+    price: row.property_details?.price,
     createdAt: row.created_at_utc.toISOString(),
   }));
+};
+
+/** Update search_name and/or property_details for a search row owned by userId.
+ * Returns the number of rows affected (0 = not found or not owned). */
+export const updateSearchAnnotation = async (
+  client: PoolClient,
+  id: string,
+  userId: string,
+  annotation: { searchName?: string | null; propertyDetails?: PropertyDetails },
+): Promise<number> => {
+  const setParts: string[] = [`last_updated_at_utc = (now() AT TIME ZONE 'UTC')`];
+  const params: unknown[] = [id, userId];
+
+  if ("searchName" in annotation) {
+    params.push(annotation.searchName ?? null);
+    setParts.push(`search_name = $${String(params.length)}`);
+  }
+
+  if ("propertyDetails" in annotation) {
+    params.push(JSON.stringify(annotation.propertyDetails));
+    setParts.push(`property_details = $${String(params.length)}`);
+  }
+
+  try {
+    const result = await client.query(
+      `UPDATE searches SET ${setParts.join(", ")} WHERE search_id = $1 AND user_id = $2`,
+      params,
+    );
+    return result.rowCount ?? 0;
+  } catch (err: unknown) {
+    // Postgres error code 22P02 = invalid_text_representation (e.g. non-uuid id)
+    if (
+      err !== null &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: unknown }).code === "22P02"
+    ) {
+      return 0;
+    }
+    throw err;
+  }
 };

@@ -7,6 +7,21 @@
 
 export type TransportMode = "walk" | "transit" | "cycle" | "drive";
 
+export type PricePeriod = "pd" | "pw" | "pcm" | "pa";
+
+export interface Price {
+  amount?: number;
+  /** ISO 4217 currency code, e.g. "EUR". */
+  currency?: string;
+  period?: PricePeriod;
+}
+
+export interface PropertyDetails {
+  price?: Price;
+  description?: string;
+  listingUrl?: string;
+}
+
 export type AmenityCategory =
   | "supermarket"
   | "transit_stop"
@@ -69,22 +84,24 @@ export interface Folder {
 
 export interface Search {
   id: string;
-  nickname?: string;
+  searchName?: string;
   address: string;
   modes: TransportMode[];
   amenityCategories: AmenityCategory[];
   amenityGroups: AmenityGroup[];
   pois: AttachedPoi[];
   folderId?: string;
+  propertyDetails?: PropertyDetails;
   createdAt: string;
 }
 
 export interface SearchSummary {
   id: string;
   status: RequestStatus;
-  nickname?: string;
+  searchName?: string;
   address: string;
   folderId?: string;
+  price?: Price;
   createdAt: string;
 }
 
@@ -102,7 +119,6 @@ export interface SearchRequest {
   modes: TransportMode[];
   amenityCategories: AmenityCategory[];
   pois: { label: string; address: string }[];
-  nickname?: string;
 }
 
 export interface SearchResponse {
@@ -114,6 +130,12 @@ export interface SearchResponse {
 
 export interface SearchMessage extends SearchRequest {
   searchRequestId: string;
+}
+
+export interface UpdateSearchAnnotationRequest {
+  /** A string sets the name; `null` clears it; omit to leave unchanged. */
+  searchName?: string | null;
+  propertyDetails?: PropertyDetails;
 }
 
 // ── Generic API envelopes ───────────────────────────────────────────

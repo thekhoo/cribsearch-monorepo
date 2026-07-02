@@ -5,7 +5,7 @@ import { logger, serializeError, type Logger } from "@cribsearch/logger";
 import type { ApiError } from "@cribsearch/shared-types";
 import { env } from "./shared/config/env";
 import { healthRouter } from "./routes/health";
-import { searchRouter } from "./features/searches/controller/search-routes";
+import { searchRouter } from "./features/searches/controller/searchRoutes";
 import { poiRouter } from "./features/pois/controller/poi-routes";
 
 export const createApp = (): Express => {
@@ -16,7 +16,7 @@ export const createApp = (): Express => {
   app.use(
     cors({
       origin: env.corsAllowedOrigins,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "x-request-id", "x-user-id"],
       exposedHeaders: ["x-request-id"],
     }),

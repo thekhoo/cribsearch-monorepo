@@ -9,6 +9,7 @@ import type {
   Search,
   TransportMode,
   UpdatePoiRequest,
+  UpdateSearchAnnotationRequest,
 } from "@cribsearch/shared-types";
 import { API_BASE_URL } from "./config";
 
@@ -227,6 +228,29 @@ export async function getSearch(id: string): Promise<SearchResponse> {
   if (!response.ok) {
     const message = await extractErrorMessage(response);
     throw new Error(`Failed to load search: ${message}`);
+  }
+  return response.json() as Promise<SearchResponse>;
+}
+
+/** Update a search's annotation (name, price, description, listing URL). */
+export async function updateSearch(
+  id: string,
+  body: UpdateSearchAnnotationRequest,
+): Promise<SearchResponse> {
+  const response = await fetchWithTimeout(
+    `${API_BASE_URL}/cribsearch/v1/searches/${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": HARDCODED_USER_ID,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  if (!response.ok) {
+    const message = await extractErrorMessage(response);
+    throw new Error(message);
   }
   return response.json() as Promise<SearchResponse>;
 }

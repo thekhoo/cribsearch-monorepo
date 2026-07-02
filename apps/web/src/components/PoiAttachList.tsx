@@ -56,7 +56,7 @@ export default function PoiAttachList({
       <label className="mb-1 block text-sm font-medium text-gray-700">
         Places of Interest
       </label>
-      {poisLoading && <Spinner />}
+      {poisLoading && <Spinner size="sm" />}
       {!poisLoading && pois.length === 0 && !showQuickAdd && (
         <p className="text-sm text-gray-500">
           No places of interest yet.{" "}

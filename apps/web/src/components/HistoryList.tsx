@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { SearchResponse, SearchSummary } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 import { getSearch } from "../lib/api";
-import { STATUS_META } from "../lib/format";
+import { formatPrice, STATUS_META } from "../lib/format";
 import ResultsView from "./ResultsView";
 import EmptyState from "./EmptyState";
+import PropertyDetailsPanel from "./PropertyDetailsPanel";
 import Spinner from "./Spinner";
 
 interface HistoryListProps {
@@ -81,7 +82,7 @@ export default function HistoryList({
         </button>
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-1 text-xl font-semibold">
-            {openSummary.nickname ?? openSummary.address}
+            {openSummary.searchName ?? openSummary.address}
           </h2>
           <p className="mb-4 text-sm text-gray-500">
             {new Date(openSummary.createdAt).toLocaleDateString()} ·{" "}
@@ -93,7 +94,15 @@ export default function HistoryList({
             !detailError &&
             detail &&
             (detail.search ? (
-              <ResultsView search={detail.search} />
+              <div className="space-y-4">
+                <PropertyDetailsPanel
+                  search={detail.search}
+                  onUpdated={(s) =>
+                    setDetail((prev) => (prev ? { ...prev, search: s } : prev))
+                  }
+                />
+                <ResultsView search={detail.search} />
+              </div>
             ) : (
               <p className="text-sm text-gray-500">
                 {detail.status === "Failed"
@@ -114,6 +123,7 @@ export default function HistoryList({
         const canSelect =
           selectable && (isSelected || selectedIds.length < maxCompare);
         const status = STATUS_META[search.status];
+        const priceLabel = formatPrice(search.price);
         return (
           <div
             key={search.id}
@@ -138,13 +148,18 @@ export default function HistoryList({
               className="min-w-0 flex-1 text-left"
             >
               <p className="truncate font-medium text-gray-900">
-                {search.nickname ?? search.address}
+                {search.searchName ?? search.address}
               </p>
               <p className="truncate text-sm text-gray-500">
                 {new Date(search.createdAt).toLocaleDateString()} ·{" "}
                 {search.address}
               </p>
             </button>
+            {priceLabel && (
+              <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                {priceLabel}
+              </span>
+            )}
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${status.badgeClass}`}
             >

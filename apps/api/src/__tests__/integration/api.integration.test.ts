@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "../../app";
-import { processSearchRequest } from "../../features/searches/service/process-search-request";
+import { processSearchRequest } from "../../features/searches/service/processSearchRequest";
 import { getSearchRequest } from "../../features/searches/service/get-search-request";
 import { maps } from "../../shared/maps";
 import { truncateAll } from "./db-helpers";

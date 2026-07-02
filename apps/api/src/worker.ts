@@ -5,7 +5,7 @@ import type {
 } from "aws-lambda";
 import type { SearchMessage } from "@cribsearch/shared-types";
 import { logger, serializeError } from "@cribsearch/logger";
-import { processSearchRequest } from "./features/searches/service/process-search-request";
+import { processSearchRequest } from "./features/searches/service/processSearchRequest";
 
 const log = logger.child({ component: "worker" });
 
