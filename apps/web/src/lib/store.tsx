@@ -39,6 +39,7 @@ interface StoreActions {
 interface StoreState {
   searches: SearchSummary[];
   pois: Poi[];
+  poisLoading: boolean;
   folders: Folder[];
 }
 
@@ -49,6 +50,7 @@ const StoreContext = createContext<Store | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [searches, setSearches] = useState<SearchSummary[]>([]);
   const [pois, setPois] = useState<Poi[]>([]);
+  const [poisLoading, setPoisLoading] = useState<boolean>(true);
   const [folders, setFolders] = useState<Folder[]>([]);
 
   // Hydrate POIs and search History from the API on mount. On failure, log the
@@ -62,7 +64,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           "Failed to load Places of Interest:",
           err instanceof Error ? err.message : err,
         );
-      });
+      })
+      .finally(() => setPoisLoading(false));
 
     api
       .listSearches()
@@ -139,6 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => ({
       searches,
       pois,
+      poisLoading,
       folders,
       addSearch,
       deleteSearch,
@@ -153,6 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [
       searches,
       pois,
+      poisLoading,
       folders,
       addSearch,
       deleteSearch,

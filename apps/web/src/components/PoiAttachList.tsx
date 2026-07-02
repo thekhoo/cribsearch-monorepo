@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useStore } from "../lib/store";
+import Spinner from "./Spinner";
 
 interface PoiAttachListProps {
   attachedIds: string[];
@@ -12,7 +13,7 @@ export default function PoiAttachList({
   attachedIds,
   onChange,
 }: PoiAttachListProps) {
-  const { pois, addPoi } = useStore();
+  const { pois, poisLoading, addPoi } = useStore();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickLabel, setQuickLabel] = useState("Work");
   const [quickAddress, setQuickAddress] = useState("");
@@ -55,7 +56,8 @@ export default function PoiAttachList({
       <label className="mb-1 block text-sm font-medium text-gray-700">
         Places of Interest
       </label>
-      {pois.length === 0 && !showQuickAdd && (
+      {poisLoading && <Spinner />}
+      {!poisLoading && pois.length === 0 && !showQuickAdd && (
         <p className="text-sm text-gray-500">
           No places of interest yet.{" "}
           <button
@@ -67,7 +69,7 @@ export default function PoiAttachList({
           </button>
         </p>
       )}
-      {pois.length > 0 && (
+      {!poisLoading && pois.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {pois.map((poi) => {
             const active = attachedIds.includes(poi.id);
@@ -119,7 +121,7 @@ export default function PoiAttachList({
                 onChange={(e) => setQuickAddress(e.target.value)}
                 disabled={isAdding}
                 className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-50"
-                placeholder="123 Main St, Sydney"
+                placeholder="Kärntner Straße 10, 1010 Wien"
               />
             </div>
             <button

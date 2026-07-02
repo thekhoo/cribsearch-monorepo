@@ -125,7 +125,7 @@ export default function SearchForm() {
           type="text"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="e.g. 18 King St, Newtown NSW 2042"
+          placeholder="e.g. Mariahilfer Straße 100, 1060 Wien"
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-500"
         />
       </div>
