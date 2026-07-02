@@ -4,9 +4,10 @@ import { useState } from "react";
 import type { Poi } from "@cribsearch/shared-types";
 import { useStore } from "../lib/store";
 import EmptyState from "./EmptyState";
+import Spinner from "./Spinner";
 
 export default function PoiManager() {
-  const { pois, addPoi, updatePoi, deletePoi } = useStore();
+  const { pois, poisLoading, addPoi, updatePoi, deletePoi } = useStore();
 
   // ── Add form ────────────────────────────────────────────────────
   const [addLabel, setAddLabel] = useState("Work");
@@ -139,7 +140,9 @@ export default function PoiManager() {
         </p>
       )}
 
-      {pois.length === 0 ? (
+      {poisLoading ? (
+        <Spinner />
+      ) : pois.length === 0 ? (
         <EmptyState message="No places of interest yet. Add one above to get started." />
       ) : (
         <div className="space-y-2">
