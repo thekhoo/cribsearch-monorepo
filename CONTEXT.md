@@ -19,10 +19,22 @@ A Search captures:
 - the resulting amenities and travel stats,
 - the point in time it was performed.
 
-> Note: this supersedes the placeholder `Property` type (a real-estate listing
-> with price/bedrooms), which does not reflect the product. Cribsearch is not a
-> listings browser; it evaluates the livability of an address the user is
-> considering.
+Once results have returned, the user may **name** the Search (its **search
+name**) and annotate it with **Property Details**. Both are optional, user-
+supplied, and editable at any time; neither affects the amenities or travel
+stats.
+
+> **Search name** vs **address**: the address is the candidate rental location
+> that was evaluated (immutable, part of the originating Search Request). The
+> search name is a user-given label applied _after_ results return (e.g. "Round
+> 2 – Neubau flat"). Where a search name is present it stands in as the Search's
+> title, with the address shown beneath it.
+
+> Note: an earlier placeholder `Property` type modelled a real-estate listing
+> (price, bedrooms) as if Cribsearch were a listings browser — it is not.
+> Cribsearch evaluates the livability of an address the user is considering. The
+> **Property Details** below are deliberately different: user-supplied notes
+> _about_ the candidate, not a listing the system sources or searches over.
 
 ### History
 
@@ -66,6 +78,22 @@ it, and may add new ones to the library. This avoids re-entering the same place
 
 The distinction: **Amenities** are found _for_ you; **POIs** are declared _by_
 you.
+
+### Property Details
+
+Optional, user-supplied information _about_ the candidate rental behind a
+**Search**, recorded after results return. Property Details never influence the
+amenities or travel stats — they are annotations for the user's own comparison
+and recall. They comprise:
+
+- **Price** — the advertised rent, as an amount, a currency, and a **period**
+  (per day, per week, per calendar month, or per annum). Each part is optional
+  and captured independently; a Price may be wholly or partly blank.
+- **Description** — a short free-text note describing the place.
+- **Listing URL** — a link to the original rental page the user is evaluating.
+
+Property Details are distinct from the superseded `Property` listing type: they
+are the user's own notes on an address, not a listing Cribsearch sources.
 
 ### Travel Stat
 
