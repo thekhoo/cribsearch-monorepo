@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { withTransaction } from "../../shared/db/with-transaction";
 import { insertSearch, getSearchRow } from "../../features/searches/data/searches";
-import { processSearchRequest } from "../../features/searches/service/process-search-request";
+import { processSearchRequest } from "../../features/searches/service/processSearchRequest";
 import { getSearchRequest } from "../../features/searches/service/get-search-request";
 import type { SearchMessage, SearchRequest } from "@cribsearch/shared-types";
 import { maps } from "../../shared/maps";

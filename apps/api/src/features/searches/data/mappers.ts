@@ -159,12 +159,13 @@ export const rowsToSearch = (
 
   return {
     id: searchRow.searchId,
-    nickname: request.nickname,
+    searchName: searchRow.searchName ?? undefined,
     address: request.address,
     modes: request.modes,
     amenityCategories: request.amenityCategories,
     amenityGroups,
     pois,
+    propertyDetails: searchRow.propertyDetails,
     createdAt: searchRow.createdAt,
   };
 };

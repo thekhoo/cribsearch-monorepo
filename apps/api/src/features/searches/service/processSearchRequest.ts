@@ -74,7 +74,6 @@ export const processSearchRequest = async (
     const search: Search = {
       id,
       address: msg.address,
-      nickname: msg.nickname,
       modes: msg.modes,
       amenityCategories: msg.amenityCategories,
       amenityGroups,

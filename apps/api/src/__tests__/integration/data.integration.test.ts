@@ -13,7 +13,6 @@ const baseRequest: SearchRequest = {
   modes: ["walk"],
   amenityCategories: ["supermarket"],
   pois: [{ label: "Work", address: "456 Office St" }],
-  nickname: "Test search",
 };
 
 describe("data layer integration", () => {
