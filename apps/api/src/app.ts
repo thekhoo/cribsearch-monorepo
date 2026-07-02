@@ -16,7 +16,7 @@ export const createApp = (): Express => {
   app.use(
     cors({
       origin: env.corsAllowedOrigins,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "x-request-id", "x-user-id"],
       exposedHeaders: ["x-request-id"],
     }),

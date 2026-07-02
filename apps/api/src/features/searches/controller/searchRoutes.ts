@@ -5,8 +5,10 @@ import type {
   SearchResponse,
 } from "@cribsearch/shared-types";
 import { validateSearchRequest } from "../service/validate-search-request";
+import { validateUpdateSearchAnnotation } from "../service/validateUpdateSearchAnnotation";
 import { createSearchRequest } from "../service/create-search-request";
 import { getSearchRequest } from "../service/get-search-request";
+import { updateSearchAnnotationService } from "../service/updateSearchAnnotation";
 import { listSearchesService } from "../service/list-searches";
 import { enqueueSearch } from "../../../shared/service/queue";
 import { requireUserId } from "../../../shared/http/require-user-id";
@@ -70,6 +72,40 @@ searchRouter.get("/:id", async (req, res, next) => {
       error: view.error,
     };
     res.json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+searchRouter.patch("/:id", async (req, res, next) => {
+  try {
+    const userId = requireUserId(req, res);
+    if (!userId) return;
+
+    const validation = validateUpdateSearchAnnotation(req.body);
+    if (!validation.ok) {
+      const error: ApiError = { error: validation.error };
+      res.status(400).json(error);
+      return;
+    }
+
+    const searchRequestId = req.params.id ?? "";
+    const view = await updateSearchAnnotationService(searchRequestId, userId, validation.value);
+
+    if (!view) {
+      const error: ApiError = { error: "Not Found" };
+      res.status(404).json(error);
+      return;
+    }
+
+    req.log.info("updated search annotation", { searchRequestId });
+    const response: SearchResponse = {
+      id: view.id,
+      status: view.status,
+      search: view.search,
+      error: view.error,
+    };
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
