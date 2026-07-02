@@ -94,7 +94,7 @@ export default function HistoryList({
             !detailError &&
             detail &&
             (detail.search ? (
-              <div className="space-y-4">
+              <div className="animate-fade-in space-y-4">
                 <PropertyDetailsPanel
                   search={detail.search}
                   onUpdated={(s) =>

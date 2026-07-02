@@ -145,7 +145,7 @@ export default function PoiManager() {
       ) : pois.length === 0 ? (
         <EmptyState message="No places of interest yet. Add one above to get started." />
       ) : (
-        <div className="space-y-2">
+        <div className="animate-fade-in space-y-2">
           {pois.map((poi) =>
             editingId === poi.id ? (
               <div
