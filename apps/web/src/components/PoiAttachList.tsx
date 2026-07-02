@@ -119,7 +119,7 @@ export default function PoiAttachList({
                 onChange={(e) => setQuickAddress(e.target.value)}
                 disabled={isAdding}
                 className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-50"
-                placeholder="123 Main St, Sydney"
+                placeholder="Kärntner Straße 10, 1010 Wien"
               />
             </div>
             <button

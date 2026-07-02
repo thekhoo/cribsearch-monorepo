@@ -116,7 +116,7 @@ export default function PoiManager() {
               }}
               disabled={isAdding}
               className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:opacity-50"
-              placeholder="123 Main St, Sydney NSW 2000"
+              placeholder="Stephansplatz 1, 1010 Wien"
             />
           </div>
           <button
